@@ -6,6 +6,7 @@
     ./fish.nix
     ./vim.nix
     ./hyprland.nix
+    ./emacs/default.nix
   ];
 
   # This value determines the Home Manager release that your configuration is
