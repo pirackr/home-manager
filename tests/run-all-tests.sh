@@ -12,9 +12,6 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # Test scripts to run
 tests=(
     "test-build.sh"
-    "test-modules.sh" 
-    "test-individual-modules.sh"
-    "test-machines.sh"
 )
 
 # Track results

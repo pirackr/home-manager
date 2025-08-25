@@ -16,7 +16,7 @@ echo "📍 Configuration directory: $CONFIG_DIR"
 
 # Test if the configuration can build without errors
 echo "🚀 Running home-manager build..."
-if home-manager build; then
+if `home-manager build --flake \#pirackr@work`; then
     echo "✅ Build test PASSED: Configuration builds successfully"
     exit 0
 else
