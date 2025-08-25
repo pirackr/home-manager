@@ -20,9 +20,5 @@
         set clipboard=unnamedplus
       '';
     };
-    
-    home.sessionVariables = {
-      EDITOR = "vim";
-    };
   };
 }
