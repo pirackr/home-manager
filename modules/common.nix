@@ -22,7 +22,6 @@
   home.packages = [
     pkgs.hello 
     pkgs.neofetch 
-    pkgs.aider-chat
     pkgs.nix-prefetch-github
     
     # macOS-compatible alternatives:
