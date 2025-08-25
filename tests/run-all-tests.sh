@@ -13,6 +13,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 tests=(
     "test-build.sh"
     "test-vim.sh"
+    "test-emacs.sh"
 )
 
 # Track results

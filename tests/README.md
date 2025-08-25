@@ -26,8 +26,33 @@ Tests each individual module for specific functionality and structure.
 
 **What it tests:**
 - Individual module syntax
-- Module-specific configurations (git, fish, vim, hyprland)
+- Module-specific configurations (git, fish, vim, emacs, hyprland)
 - Module structure and content validation
+
+### `test-vim.sh`
+Tests that the vim module is configured correctly and functional.
+
+**What it tests:**
+- vim binary installation and availability
+- vim-related tools (vimdiff, vimtutor) 
+- vim functionality and version check
+- EDITOR environment variable configuration
+- vim configuration settings (line numbers, tabs, etc.)
+- vim package integration
+
+### `test-emacs.sh`
+Tests that the emacs module is configured correctly and functional.
+
+**What it tests:**
+- emacs binary installation and availability
+- emacs-related tools (emacsclient)
+- emacs functionality and version check
+- .emacs.d/init.el file generation
+- init.el syntax validation
+- .emacs.d directory structure
+- emacs configuration loading
+- EDITOR environment variable configuration (optional)
+- emacs package integration
 
 ### `test-machines.sh`
 Tests that the machines feature is working correctly.
@@ -58,6 +83,8 @@ Master test runner that executes all test scripts and provides a summary.
 ### Run individual tests
 ```bash
 ./tests/test-build.sh
+./tests/test-vim.sh
+./tests/test-emacs.sh
 ./tests/test-modules.sh
 ./tests/test-individual-modules.sh
 ./tests/test-machines.sh
