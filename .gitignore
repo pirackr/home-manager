@@ -11,3 +11,5 @@ result-*
 # Temporary files
 *~
 .#*
+.envrc
+git-crypt-key
