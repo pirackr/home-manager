@@ -1,0 +1,5 @@
+# Encrypt sensitive user configuration files
+users/work.nix filter=git-crypt diff=git-crypt
+
+# You can add other sensitive files here
+# secrets/* filter=git-crypt diff=git-crypt
