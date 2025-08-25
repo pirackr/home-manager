@@ -35,7 +35,6 @@ in
     enable = true;
     # Use Arch Linux system packages 
     package = null;
-    portalPackage = null;
     # package = pkgs.hyprland; # Or specify a different package if needed
 
     # Use extraConfig for settings not yet mapped or complex ones
