@@ -62,6 +62,7 @@
   #
   home.sessionVariables = {
     # EDITOR is now set by vim module
+    EDITOR = "vim";
   };
 
 
