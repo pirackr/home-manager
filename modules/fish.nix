@@ -6,6 +6,9 @@
   };
 
   config = lib.mkIf config.modules.fish.enable {
+    home.packages = with pkgs; [
+      grc
+    ];
     programs.fish = {
       enable = true;
       interactiveShellInit = ''
