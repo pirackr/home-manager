@@ -25,7 +25,6 @@
     pkgs.neofetch 
     pkgs.nix-prefetch-github
     
-    # macOS-compatible alternatives:
     pkgs.noto-fonts
     pkgs.nerd-fonts.fira-code
   ];
