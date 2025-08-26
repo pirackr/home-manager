@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
-# Test script to verify that the emacs module is configured correctly
+# Test script to verify that the emacs module prelude.el content is properly included in generated config
 
 set -e
 
-echo "🔧 Testing Emacs module configuration..."
+echo "🔧 Testing Emacs module prelude.el integration..."
 
 # Get the script directory
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -25,7 +25,7 @@ fi
 
 echo "✅ Build completed successfully"
 
-# Test 1: Check if emacs binary exists in home-path
+# Test 1: Check if emacs binary exists
 echo
 echo "🧪 Test 1: Checking emacs binary availability..."
 EMACS_BIN="$RESULT_DIR/home-path/bin/emacs"
@@ -36,67 +36,187 @@ else
     exit 1
 fi
 
-# Test 2: Check if emacs-related binaries are present
+# Test 2: Locate the generated hm-init.el file
 echo
-echo "🧪 Test 2: Checking emacs-related binaries..."
-EMACS_BINARIES=("emacs" "emacsclient")
-missing_binaries=()
-
-for binary in "${EMACS_BINARIES[@]}"; do
-    binary_path="$RESULT_DIR/home-path/bin/$binary"
-    if [[ -f "$binary_path" ]] && [[ -x "$binary_path" ]]; then
-        echo "✅ Found: $binary"
-    else
-        echo "❌ Missing: $binary"
-        missing_binaries+=("$binary")
-    fi
-done
-
-if [[ ${#missing_binaries[@]} -eq 0 ]]; then
-    echo "✅ Test 2 PASSED: All emacs binaries found"
-else
-    echo "❌ Test 2 FAILED: Missing binaries: ${missing_binaries[*]}"
-    exit 1
-fi
-
-# Test 3: Check emacs version and basic functionality
-echo
-echo "🧪 Test 3: Testing emacs functionality..."
-if EMACS_VERSION=$("$EMACS_BIN" --version 2>/dev/null | head -1); then
-    echo "✅ Test 3 PASSED: emacs is functional - $EMACS_VERSION"
-else
-    echo "❌ Test 3 FAILED: emacs --version command failed"
-    exit 1
-fi
-
-# Test 4: Check if .emacs.d/init.el is properly generated
-echo
-echo "🧪 Test 4: Checking .emacs.d/init.el generation..."
-
-# Find the actual init.el file in the home-files directory
-INIT_EL_FILE="$RESULT_DIR/home-files/.emacs.d/init.el"
-if [[ -f "$INIT_EL_FILE" ]]; then
-    echo "✅ Test 4 PASSED: init.el file found at $INIT_EL_FILE"
-    
-    # Check if the file has content
-    if [[ -s "$INIT_EL_FILE" ]]; then
-        echo "✅ init.el file has content ($(wc -l < "$INIT_EL_FILE") lines)"
-    else
-        echo "⚠️  init.el file exists but is empty"
-    fi
-else
-    echo "❌ Test 4 FAILED: init.el file not found at $INIT_EL_FILE"
-    exit 1
-fi
-
-# Test 4b: Find the actual hm-init.el configuration file
-echo
-echo "🧪 Test 4b: Locating hm-init.el configuration file..."
+echo "🧪 Test 2: Locating generated hm-init.el configuration file..."
 
 # Find the emacs-with-packages in the result
 EMACS_WITH_PACKAGES=$(readlink "$RESULT_DIR/home-path/bin/emacs" | sed 's|/bin/emacs$||')
 if [[ -z "$EMACS_WITH_PACKAGES" ]]; then
-    echo "❌ Test 4b FAILED: Could not determine emacs-with-packages path"
+    echo "❌ Test 2 FAILED: Could not determine emacs-with-packages path"
+    exit 1
+fi
+
+# Find the hm-init.el file
+HM_INIT_FILE=""
+
+# Look for it in the emacs packages deps
+EMACS_PACKAGES_DEPS=$(nix-store -q --references "$EMACS_WITH_PACKAGES" 2>/dev/null | grep "emacs-packages-deps" | head -1)
+if [[ -n "$EMACS_PACKAGES_DEPS" ]] && [[ -f "$EMACS_PACKAGES_DEPS/share/emacs/site-lisp/hm-init.el" ]]; then
+    HM_INIT_FILE="$EMACS_PACKAGES_DEPS/share/emacs/site-lisp/hm-init.el"
+fi
+
+# Alternative: Look for emacs-hm-init package directly
+if [[ -z "$HM_INIT_FILE" ]]; then
+    HM_INIT_PACKAGE=$(nix-store -q --references "$EMACS_WITH_PACKAGES" 2>/dev/null | grep "emacs-hm-init" | head -1)
+    if [[ -n "$HM_INIT_PACKAGE" ]] && [[ -f "$HM_INIT_PACKAGE/share/emacs/site-lisp/hm-init.el" ]]; then
+        HM_INIT_FILE="$HM_INIT_PACKAGE/share/emacs/site-lisp/hm-init.el"
+    fi
+fi
+
+if [[ -z "$HM_INIT_FILE" ]] || [[ ! -f "$HM_INIT_FILE" ]]; then
+    echo "❌ Test 2 FAILED: Could not find hm-init.el file"
+    exit 1
+fi
+
+echo "✅ Test 2 PASSED: hm-init.el file found at $HM_INIT_FILE"
+
+# Test 3: Verify prelude.el content is included in generated config
+echo
+echo "🧪 Test 3: Verifying prelude.el content is included in generated hm-init.el..."
+
+# Read the original prelude.el content
+PRELUDE_FILE="$CONFIG_DIR/modules/emacs/prelude.el"
+if [[ ! -f "$PRELUDE_FILE" ]]; then
+    echo "❌ Test 3 FAILED: prelude.el file not found at $PRELUDE_FILE"
+    exit 1
+fi
+
+echo "  📖 Reading prelude.el content from $PRELUDE_FILE"
+
+# Define key configuration patterns that should be present from prelude.el
+PRELUDE_PATTERNS=(
+    "bootstrap-version"
+    "straight/repos/straight\.el/bootstrap\.el"
+    "straight-use-package.*use-package"
+    "straight-use-package-by-default.*t"
+    "tool-bar-mode.*-1"
+    "menu-bar-mode.*-1"
+    "scroll-bar-mode.*-1"
+    "savehist-mode.*\+1"
+    "recentf-mode.*\+1"
+    "save-place-mode.*\+1"
+    "inhibit-startup-message.*t"
+    "initial-scratch-message.*nil"
+    "global-display-line-numbers-mode.*1"
+    "indent-tabs-mode.*nil"
+    "tab-width.*4"
+    "global-auto-revert-mode.*t"
+    "global-hl-line-mode.*1"
+)
+
+echo "  🔍 Checking for prelude.el patterns in generated config..."
+MISSING_PATTERNS=()
+
+for pattern in "${PRELUDE_PATTERNS[@]}"; do
+    if grep -E "$pattern" "$HM_INIT_FILE" >/dev/null 2>&1; then
+        echo "  ✅ Found: $pattern"
+    else
+        echo "  ❌ Missing: $pattern"
+        MISSING_PATTERNS+=("$pattern")
+    fi
+done
+
+if [[ ${#MISSING_PATTERNS[@]} -eq 0 ]]; then
+    echo "✅ Test 3 PASSED: All prelude.el content patterns found in generated config"
+else
+    echo "❌ Test 3 FAILED: Missing ${#MISSING_PATTERNS[@]} prelude.el patterns in generated config"
+    echo "  Missing patterns: ${MISSING_PATTERNS[*]}"
+    exit 1
+fi
+
+# Test 4: Verify Emacs can load the configuration and prelude settings work
+echo
+echo "🧪 Test 4: Testing prelude configuration runtime functionality..."
+
+# Test that specific prelude settings are applied correctly
+echo "  🔧 Testing individual prelude settings..."
+
+# Test tab-width setting from prelude
+TAB_WIDTH_RESULT=$("$EMACS_BIN" --batch --eval "(progn (load \"$HM_INIT_FILE\") (princ tab-width))" 2>/dev/null)
+if [[ "$TAB_WIDTH_RESULT" == "4" ]]; then
+    echo "  ✅ tab-width correctly set to 4 (from prelude.el)"
+else
+    echo "  ❌ tab-width not set correctly (got: '$TAB_WIDTH_RESULT', expected: 4)"
+    exit 1
+fi
+
+# Test indent-tabs-mode setting from prelude
+INDENT_TABS_RESULT=$("$EMACS_BIN" --batch --eval "(progn (load \"$HM_INIT_FILE\") (princ indent-tabs-mode))" 2>/dev/null)
+if [[ "$INDENT_TABS_RESULT" == "nil" ]]; then
+    echo "  ✅ indent-tabs-mode correctly set to nil (from prelude.el)"
+else
+    echo "  ❌ indent-tabs-mode not set correctly (got: '$INDENT_TABS_RESULT', expected: nil)"
+    exit 1
+fi
+
+# Test inhibit-startup-message setting from prelude
+INHIBIT_STARTUP_RESULT=$("$EMACS_BIN" --batch --eval "(progn (load \"$HM_INIT_FILE\") (princ inhibit-startup-message))" 2>/dev/null)
+if [[ "$INHIBIT_STARTUP_RESULT" == "t" ]]; then
+    echo "  ✅ inhibit-startup-message correctly set to t (from prelude.el)"
+else
+    echo "  ❌ inhibit-startup-message not set correctly (got: '$INHIBIT_STARTUP_RESULT', expected: t)"
+    exit 1
+fi
+
+# Test that straight.el was set up correctly (from prelude)
+STRAIGHT_AVAILABLE=$("$EMACS_BIN" --batch --eval "(progn (load \"$HM_INIT_FILE\") (princ (if (fboundp 'straight-use-package) 'available 'not-available)))" 2>/dev/null)
+if [[ "$STRAIGHT_AVAILABLE" == "available" ]]; then
+    echo "  ✅ straight-use-package function available (straight.el setup from prelude.el working)"
+else
+    echo "  ❌ straight-use-package not available (got: '$STRAIGHT_AVAILABLE')"
+    exit 1
+fi
+
+echo "✅ Test 4 PASSED: Prelude configuration runtime functionality verified"
+
+# Test 5: Verify configuration loads without errors
+echo
+echo "🧪 Test 5: Testing complete configuration loading..."
+TEMP_TEST_FILE=$(mktemp)
+cat > "$TEMP_TEST_FILE" << EOF
+(condition-case err
+    (progn
+      (load "$HM_INIT_FILE")
+      (message "Configuration with prelude.el loaded successfully")
+      (kill-emacs 0))
+  (error
+    (message "Error loading configuration: %s" err)
+    (kill-emacs 1)))
+EOF
+
+if "$EMACS_BIN" --batch --load "$TEMP_TEST_FILE" 2>/dev/null; then
+    echo "✅ Test 5 PASSED: emacs can load complete configuration including prelude.el without errors"
+else
+    echo "❌ Test 5 FAILED: emacs configuration loading failed"
+    echo "  Attempting to get error details:"
+    "$EMACS_BIN" --batch --load "$TEMP_TEST_FILE" 2>&1 || true
+    rm -f "$TEMP_TEST_FILE"
+    exit 1
+fi
+
+rm -f "$TEMP_TEST_FILE"
+
+echo
+echo "=========================================="
+echo "📊 Emacs Prelude Integration Test Summary"
+echo "=========================================="
+echo "✅ emacs binary availability: VERIFIED"
+echo "✅ hm-init.el file generation: VERIFIED"
+echo "✅ prelude.el content inclusion: VERIFIED"
+echo "✅ prelude settings runtime application: VERIFIED"
+echo "✅ complete configuration loading: VERIFIED"
+
+echo
+echo "🎉 Emacs prelude.el integration test completed successfully!"
+echo "   Key verification points:"
+echo "   - prelude.el content is properly included in generated hm-init.el"
+echo "   - All prelude configuration patterns are present"
+echo "   - Prelude settings (tab-width, indent-tabs-mode, etc.) work at runtime"
+echo "   - straight.el package manager setup from prelude is functional"
+echo "   - Complete configuration loads without errors"
+
+exit 0
     exit 1
 fi
 
