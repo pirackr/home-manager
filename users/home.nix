@@ -23,5 +23,6 @@
     git.enable = true;  # Enable git for this user
     fish.enable = true;  # Enable fish for this user
     hyprland.enable = true;  # Disabled by default
+    k8s.enable = true;  # Enable Kubernetes tools
   };
 }

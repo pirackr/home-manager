@@ -14,6 +14,7 @@ tests=(
     "test-build.sh"
     "test-vim.sh"
     "test-emacs.sh"
+    "test-k8s.sh"
 )
 
 # Track results
