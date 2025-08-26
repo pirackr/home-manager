@@ -59,6 +59,14 @@
 (setq-default indent-tabs-mode nil) ; Use spaces instead of tabs
 (setq-default tab-width 4)         ; Set tab width to 4 spaces
 
+;; Font settings
+(set-face-attribute 'default nil
+                    :family "Fira Code"
+                    :height 150) ; height is in 1/10pt, so 150 = 15pt
+
+;; Ensure the font is applied to all frames
+(add-to-list 'default-frame-alist '(font . "Fira Code-15"))
+
 (defconst doom-system
   (pcase system-type
     ('darwin                           '(macos bsd))
