@@ -7,6 +7,7 @@
     ./vim.nix
     ./hyprland.nix
     ./emacs/default.nix
+    ./k8s.nix
   ];
 
   # This value determines the Home Manager release that your configuration is
