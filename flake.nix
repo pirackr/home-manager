@@ -8,14 +8,16 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
     flake-utils.url = "github:numtide/flake-utils";
+    mac-app-util.url = "github:hraban/mac-app-util";
   };
 
-  outputs = { nixpkgs, home-manager, flake-utils, ... }:
+  outputs = { nixpkgs, home-manager, flake-utils, mac-app-util, ... }:
     {
       homeConfigurations = {
         "pirackr@work" = home-manager.lib.homeManagerConfiguration {
           pkgs = import nixpkgs { system = "aarch64-darwin"; };
           modules = [
+            mac-app-util.homeManagerModules.default
             ./modules/common.nix
             ./users/work.nix
           ];
@@ -25,7 +27,7 @@
           };
 
         "pirack@home" = home-manager.lib.homeManagerConfiguration {
-          pkgs = import nixpkgs { system = "aarch64-darwin"; };
+          pkgs = import nixpkgs { system = "x86_64-linux"; };
           modules = [
             ./modules/common.nix
             ./users/home.nix
