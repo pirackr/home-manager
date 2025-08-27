@@ -15,10 +15,13 @@
       (pkgs.writeShellApplication {
         name = "kubelogin";
         text = ''
-          # Create a modified PATH that excludes the current script's directory
-          CLEANED_PATH=$(echo "$PATH" | tr ':' '\n' | grep -v '/nix/store' | paste -sd ':' -)
+          # Directory of this wrapper script
+          WRAPPER_DIR="$(cd "$(dirname "''${BASH_SOURCE[0]}")" && pwd)"
           
-          # Find the real kubelogin binary in the cleaned PATH (should be homebrew version)
+          # Create a modified PATH that excludes the wrapper directory
+          CLEANED_PATH=$(echo "$PATH" | tr ':' '\n' | grep -vFx "$WRAPPER_DIR" | paste -sd ':' -)
+          
+          # Find the real kubelogin binary in the cleaned PATH
           REAL_KUBELOGIN=$(PATH="$CLEANED_PATH" command -v kubelogin)
           
           if [[ -z "$REAL_KUBELOGIN" ]]; then
@@ -43,12 +46,12 @@
           
           # Append custom cache dir if environment was set
           if [[ -n "$ENVIRONMENT" ]]; then
-            CACHE_DIR="$BASE_CACHE_DIR/$ENVIRONMENT"
-            mkdir -p "$CACHE_DIR"
-            exec "$REAL_KUBELOGIN" "''${ARGS[@]}" --token-cache-dir="$CACHE_DIR"
-          else
-            exec "$REAL_KUBELOGIN" "''${ARGS[@]}"
+            CACHE_DIR="''${BASE_CACHE_DIR}/''${ENVIRONMENT}"
+            ARGS+=("--cache-dir" "$CACHE_DIR")
           fi
+          
+          # Run the real kubelogin with modified args
+          exec "$REAL_KUBELOGIN" "''${ARGS[@]}"
         '';
       })
     ];
