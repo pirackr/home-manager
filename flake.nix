@@ -8,10 +8,11 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
     flake-utils.url = "github:numtide/flake-utils";
+    nixgl.url   = "github:nix-community/nixGL";
     mac-app-util.url = "github:hraban/mac-app-util";
   };
 
-  outputs = { nixpkgs, home-manager, flake-utils, mac-app-util, ... }:
+  outputs = { nixpkgs, home-manager, flake-utils, nixgl, mac-app-util, ... }:
     {
       homeConfigurations = {
         "pirackr@work" = home-manager.lib.homeManagerConfiguration {
@@ -26,7 +27,7 @@
             };
           };
 
-        "pirack@home" = home-manager.lib.homeManagerConfiguration {
+        "pirackr@home" = home-manager.lib.homeManagerConfiguration {
           pkgs = import nixpkgs { system = "x86_64-linux"; };
           modules = [
             ./modules/common.nix
@@ -34,6 +35,7 @@
           ];
           extraSpecialArgs = {
             inherit nixpkgs;
+            nixgl = nixgl;
           };
         };
       };
