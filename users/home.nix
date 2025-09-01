@@ -44,5 +44,6 @@
     hyprland.enable = true;  # Disabled by default
     k8s.enable = true;  # Enable Kubernetes tools
     emacs.enable = true;
+    fcitx.enable = true;
   };
 }

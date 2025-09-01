@@ -8,6 +8,7 @@
     ./hyprland.nix
     ./emacs/default.nix
     ./k8s.nix
+    ./fcitx.nix
   ];
 
   # This value determines the Home Manager release that your configuration is
