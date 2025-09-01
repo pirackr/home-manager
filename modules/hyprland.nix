@@ -192,8 +192,8 @@ in
     '';
 
     xdg.configFile."hypr/hyprpaper.conf".text = ''
-      preload = ~/wallpapers/forrest.png
-      wallpaper = HDMI-A-1, ~/wallpapers/forrest.png
+      preload = ~/wallpapers/pugs.jpg
+      wallpaper = HDMI-A-1, ~/wallpapers/pugs.jpg
       splash = false
       ipc = off
     '';
