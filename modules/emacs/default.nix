@@ -9,12 +9,6 @@
 
   options.modules.emacs = {
     enable = lib.mkEnableOption "Emacs configuration";
-
-    evil = lib.mkOption {
-      type = lib.types.bool;
-      default = true;
-      description = "Enable Evil mode configuration for Emacs";
-    };
   };
 
   config = lib.mkIf config.modules.emacs.enable {
@@ -521,6 +515,7 @@
              (go "https://github.com/tree-sitter/tree-sitter-go")
              (gomod "https://github.com/camdencheek/tree-sitter-go-mod")
              (dockerfile "https://github.com/camdencheek/tree-sitter-dockerfile")
+             (haskell "https://github.com/tree-sitter/tree-sitter-haskell")
              (html "https://github.com/tree-sitter/tree-sitter-html")
              (javascript "https://github.com/tree-sitter/tree-sitter-javascript" "master" "src")
              (json "https://github.com/tree-sitter/tree-sitter-json")
