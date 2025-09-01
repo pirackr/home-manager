@@ -1,4 +1,4 @@
-{ config, pkgs, lib, ... }:
+{ config, pkgs, nixgl, lib, ... }:
 
 let
   cfg = config.modules.hyprland;
@@ -60,7 +60,6 @@ in
       mako
       hyprpaper
       rofi-wayland
-      kitty
       pcmanfm
       firefox
       grim
@@ -74,7 +73,8 @@ in
     # Enable hyprland
     wayland.windowManager.hyprland = lib.mkIf pkgs.stdenv.isLinux {
       enable = true;
-      package = null; # Use system package
+      package = (config.lib.nixGL.wrap pkgs.hyprland);
+      # package = null; # Use system package
 
       # Use extraConfig for complex settings
       extraConfig = ''
