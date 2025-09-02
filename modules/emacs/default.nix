@@ -4,6 +4,7 @@
   imports = [
     ./emacs-init.nix
     ./evil.nix
+    ./haskell.nix
   ];
 
   options.modules.emacs = {
