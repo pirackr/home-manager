@@ -9,11 +9,16 @@
     home.packages = with pkgs; [
       grc
     ];
-    
+
     programs.fish = {
       enable = true;
       interactiveShellInit = ''
         set fish_greeting # Disable greeting
+
+        # Why don't it do this itself?
+        if test -f /etc/profile.d/nix-daemon.fish
+          source /etc/profile.d/nix-daemon.fish
+        end
       '';
 
       plugins = [
@@ -38,7 +43,5 @@
         }
       ];
     };
-
-    programs.bash.enable = true;
   };
 }
