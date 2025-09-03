@@ -20,19 +20,13 @@
   config = lib.mkIf config.modules.emacs.enable {
     programs.emacs = {
       enable = true;
-      
+
       # Enable the init configuration system
       init = {
         enable = true;
-        
+
         # Use-package configurations
         usePackage = {
-          ag = {
-            enable = true;
-            package = epkgs: epkgs.ag;
-            extraPackages = [ pkgs.silver-searcher ];
-          };
-
           doom-modeline = {
             enable = true;
             package = epkgs: epkgs.doom-modeline;
@@ -61,6 +55,7 @@
             '';
           };
 
+          # Displays current match and total matches information in the mode-line in various search modes.
           anzu = {
             enable = true;
             package = epkgs: epkgs.anzu;
@@ -133,8 +128,12 @@
             enable = true;
             package = epkgs: epkgs.treesit-auto;
             config = ''
+              (treesit-auto-add-to-auto-mode-alist 'all)
               (global-treesit-auto-mode)
             '';
+            custom = {
+              treesit-auto-install = "'prompt";
+            };
           };
 
           treemacs = {
@@ -219,10 +218,10 @@
           lsp-mode = {
             enable = true;
             package = epkgs: epkgs.lsp-mode;
-            hook = [ 
+            hook = [
               "(scala-ts-mode . lsp)"
               "(java-mode . lsp)"
-              "(yaml-mode . lsp)"
+              "(yaml-ts-mode . lsp)"
               "(go-ts-mode . lsp)"
               "(lsp-mode . lsp-lens-mode)"
               "(lsp-mode . yas-minor-mode)"
@@ -253,15 +252,15 @@
             package = epkgs: epkgs.lsp-pyright;
             defer = true;
             custom = {
-              lsp-pyright-langserver-command = "basedpyright";
+              lsp-pyright-langserver-command = "\"basedpyright\"";
             };
             config = ''
               (setq lsp-pyright-disable-language-service nil
                     lsp-pyright-disable-organize-imports nil
                     lsp-pyright-diagnostic-mode "workspace")
             '';
-            hook = [ 
-              "(python-mode . (lambda () (require 'lsp-pyright) (lsp-deferred)))" 
+            hook = [
+              "(python-mode . (lambda () (require 'lsp-pyright) (lsp-deferred)))"
             ];
           };
 
@@ -291,10 +290,10 @@
             ];
           };
 
-          yaml-mode = {
-            enable = true;
-            package = epkgs: epkgs.yaml-mode;
-          };
+          # yaml-ts-mode = {
+          #   enable = true;
+          #   package = epkgs: epkgs.yaml-ts-mode;
+          # };
 
           apheleia = {
             enable = true;
@@ -503,7 +502,7 @@
             package = epkgs: epkgs.editorconfig;
           };
         };
-        
+
         # Basic configuration in prelude (read from file)
         prelude = builtins.readFile ./prelude.el;
 

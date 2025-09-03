@@ -7,24 +7,36 @@
       ormolu
       hoogle
       cabal-install
+      haskell-language-server
     ];
 
     programs.emacs = {
       init = {
         usePackage = {
-          haskell-ts-mode = {
+          haskell-mode = {
             enable = true;
-            package = (epkgs: epkgs.haskell-ts-mode);
-            mode = [ "\.hs'" "\.lhs'" ];
-            custom = {
+          };
+
+          haskell-ts-mode = {
+           enable = true;
+           package = (epkgs: epkgs.haskell-ts-mode);
+           mode = [
+             ''("\\.hs\\'" . haskell-mode)''
+             ''("\\.hsc\\'" . haskell-mode)''
+             ''("\\.c2hs\\'" . haskell-mode)''
+             ''("\\.cpphs\\'" . haskell-mode)''
+             ''("\\.lhs\\'" . haskell-literate-mode)''
+           ];
+           hook = [ "(haskell-ts-mode . haskell-ts-mode)" ];
+           custom = {
               haskell-ts-font-lock-level = 4;
               haskell-ts-use-indent = true;
-              haskell-ts-ghci = "ghci";
+              haskell-ts-ghci = "\"ghci\"";
             };
             config = ''
               (add-to-list 'treesit-language-source-alist
                '(haskell . ("https://github.com/tree-sitter/tree-sitter-haskell" "v0.23.1")))
-              (unless (treesit-grammar-location 'haskell)
+              (unless (treesit-language-available-p 'haskell)
                (treesit-install-language-grammar 'haskell))
             '';
           };
@@ -49,4 +61,3 @@
     };
   };
 }
-
