@@ -21,13 +21,12 @@
            enable = true;
            package = (epkgs: epkgs.haskell-ts-mode);
            mode = [
-             ''("\\.hs\\'" . haskell-mode)''
-             ''("\\.hsc\\'" . haskell-mode)''
-             ''("\\.c2hs\\'" . haskell-mode)''
-             ''("\\.cpphs\\'" . haskell-mode)''
-             ''("\\.lhs\\'" . haskell-literate-mode)''
+             ''("\\.hs\\'" . haskell-ts-mode)''
+             ''("\\.hsc\\'" . haskell-ts-mode)''
+             ''("\\.c2hs\\'" . haskell-ts-mode)''
+             ''("\\.cpphs\\'" . haskell-ts-mode)''
+             ''("\\.lhs\\'" . haskell-ts-mode)''
            ];
-           hook = [ "(haskell-ts-mode . haskell-ts-mode)" ];
            custom = {
               haskell-ts-font-lock-level = 4;
               haskell-ts-use-indent = true;
