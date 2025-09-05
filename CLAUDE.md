@@ -74,10 +74,11 @@ nix flake update nixpkgs
 ### Emacs Configuration
 - Complex modular Emacs setup in `modules/emacs/`
 - Uses Home Manager's `programs.emacs.init.usePackage` system
+- **Native Compilation**: Uses `emacs-nativecomp` for significant performance improvements
 - **Language Server Support**: Uses Eglot (built-in LSP client) with eglot-booster for enhanced performance
 - **Language Support**: Scala (metals), Python (basedpyright), Go, Nix (nil), Terraform, Haskell (HLS)
 - Includes evil mode, tree-sitter, and comprehensive language-specific configurations
-- Performance optimizations: eglot-booster, memory tuning, flymake integration
+- Performance optimizations: native compilation, eglot-booster, memory tuning, flymake integration
 
 ### Development Tools
 - Multiple editor support (Emacs, Vim)
