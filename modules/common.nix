@@ -26,12 +26,15 @@
     pkgs.neofetch
     pkgs.nix-prefetch-github
     pkgs.curl
+    pkgs.wget
     pkgs.tmux
     pkgs.less
     pkgs.ripgrep
 
+    pkgs.aspell
     pkgs.noto-fonts
     pkgs.nerd-fonts.fira-code
+    pkgs.claude-code
   ];
 
   # Home Manager is pretty good at managing dotfiles. The primary way to manage
