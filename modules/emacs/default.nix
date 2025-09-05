@@ -495,7 +495,18 @@
 
         # Additional global configuration
         earlyInit = ''
-          ;; Additional early initialization
+          ;; Native compilation settings
+          (when (fboundp 'native-comp-available-p)
+            (setq native-comp-async-report-warnings-errors 'silent)
+            (setq native-comp-jit-compilation t)
+            (setq native-comp-deferred-compilation t)
+            (setq native-comp-speed 2)
+            (setq native-comp-debug 0)
+            ;; Set native-comp cache directory to avoid permission issues
+            (when (fboundp 'startup-redirect-eln-cache)
+              (startup-redirect-eln-cache
+               (convert-standard-filename
+                (expand-file-name "var/eln-cache/" user-emacs-directory)))))
         '';
 
         postlude = ''
@@ -523,6 +534,11 @@
 
           ;; Additional global settings
           (setq backup-directory-alist `(("." . "~/.emacs.d/saves")))
+
+          ;; Native compilation information
+          (when (and (fboundp 'native-comp-available-p) (native-comp-available-p))
+            (message "Native compilation is available")
+            (setq comp-deferred-compilation t))
 
           ;; Enable which-key and editorconfig (using built-in packages)
           (which-key-mode +1)
