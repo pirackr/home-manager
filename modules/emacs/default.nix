@@ -171,7 +171,6 @@
             enable = true;
             package = epkgs: epkgs.company;
             config = ''
-              (setq lsp-completion-provider :capf)
               ;; (add-to-list 'company-backends 'company-nixos-options)
               (global-company-mode)
             '';
@@ -202,6 +201,11 @@
           yasnippet = {
             enable = true;
             package = epkgs: epkgs.yasnippet;
+            config = ''
+              (yas-global-mode 1)
+              ;; Enable yasnippet integration with eglot
+              (add-hook 'eglot-managed-mode-hook 'yas-minor-mode)
+            '';
           };
 
           go-ts-mode = {
@@ -209,30 +213,42 @@
             package = epkgs: epkgs.emacs; # Built-in package in newer Emacs
           };
 
-          lsp-mode = {
+          eglot = {
             enable = true;
-            package = epkgs: epkgs.lsp-mode;
+            package = epkgs: epkgs.eglot;
             hook = [
-              "(scala-ts-mode . lsp)"
-              "(java-mode . lsp)"
-              "(yaml-ts-mode . lsp)"
-              "(go-ts-mode . lsp)"
-              "(lsp-mode . lsp-lens-mode)"
-              "(lsp-mode . yas-minor-mode)"
+              "(scala-ts-mode . eglot-ensure)"
+              "(java-mode . eglot-ensure)"
+              "(yaml-ts-mode . eglot-ensure)"
+              "(go-ts-mode . eglot-ensure)"
+              "(python-mode . eglot-ensure)"
+              "(nix-mode . eglot-ensure)"
+              "(terraform-mode . eglot-ensure)"
+              "(haskell-ts-mode . eglot-ensure)"
             ];
             config = ''
-              ;; Uncomment following section if you would like to tune lsp-mode performance according to
-              ;; https://emacs-lsp.github.io/lsp-mode/page/performance/
+              ;; Performance tuning for eglot
               (setq gc-cons-threshold 100000000) ;; 100mb
               (setq read-process-output-max (* 1024 1024)) ;; 1mb
-              (setq lsp-idle-delay 0.500)
-              (setq lsp-log-io nil)
-              (setq lsp-completion-provider :capf)
-              (setq lsp-prefer-flymake nil)
-              (setq lsp-disabled-clients '(semgrep-ls))
-              ;; Makes LSP shutdown the metals server when all buffers in the project are closed.
-              ;; https://emacs-lsp.github.io/lsp-mode/page/settings/mode/#lsp-keep-workspace-alive
-              (setq lsp-keep-workspace-alive nil)
+              
+              ;; Configure eglot server programs
+              (add-to-list 'eglot-server-programs '(scala-ts-mode . ("metals")))
+              (add-to-list 'eglot-server-programs '(python-mode . ("basedpyright" "--langserver")))
+              (add-to-list 'eglot-server-programs '(nix-mode . ("nil")))
+              (add-to-list 'eglot-server-programs '(terraform-mode . ("terraform-ls" "serve")))
+              (add-to-list 'eglot-server-programs '(haskell-ts-mode . ("haskell-language-server-wrapper" "--lsp")))
+              
+              ;; Eglot configuration
+              (setq eglot-autoshutdown t)
+              (setq eglot-sync-connect nil)
+              (setq eglot-extend-to-xref t)
+              
+              ;; Use flymake (eglot's default) instead of flycheck
+              (setq eglot-stay-out-of '(flycheck))
+              
+              ;; Additional eglot configuration
+              (setq eglot-events-buffer-size 0) ;; Disable events buffer for performance
+              (setq eglot-ignored-server-capabilities '(:hoverProvider))
             '';
           };
 
@@ -241,22 +257,6 @@
             package = epkgs: epkgs.poetry;
           };
 
-          lsp-pyright = {
-            enable = true;
-            package = epkgs: epkgs.lsp-pyright;
-            defer = true;
-            custom = {
-              lsp-pyright-langserver-command = "\"basedpyright\"";
-            };
-            config = ''
-              (setq lsp-pyright-disable-language-service nil
-                    lsp-pyright-disable-organize-imports nil
-                    lsp-pyright-diagnostic-mode "workspace")
-            '';
-            hook = [
-              "(python-mode . (lambda () (require 'lsp-pyright) (lsp-deferred)))"
-            ];
-          };
 
           yapfify = {
             enable = true;
@@ -265,10 +265,6 @@
             hook = [ "(python-mode . yapf-mode)" ];
           };
 
-          lsp-metals = {
-            enable = true;
-            package = epkgs: epkgs.lsp-metals;
-          };
 
           posframe = {
             enable = true;
@@ -278,10 +274,12 @@
           dap-mode = {
             enable = true;
             package = epkgs: epkgs.dap-mode;
-            hook = [
-              "(lsp-mode . dap-mode)"
-              "(lsp-mode . dap-ui-mode)"
-            ];
+            config = ''
+              ;; Enable dap-mode and dap-ui-mode globally for supported languages
+              (dap-mode 1)
+              (dap-ui-mode 1)
+              (dap-tooltip-mode 1)
+            '';
           };
 
           # yaml-ts-mode = {
@@ -393,20 +391,10 @@
             '';
           };
 
-          lsp-nix = {
-            enable = true;
-            package = epkgs: epkgs.nix-mode; # lsp-nix might be part of nix-mode
-            demand = true;
-            after = [ "lsp-mode" ];
-            config = ''
-              (setq lsp-nix-nil-formatter ["nixfmt"])
-            '';
-          };
 
           nix-mode = {
             enable = true;
             package = epkgs: epkgs.nix-mode;
-            hook = [ "(nix-mode . lsp-deferred)" ];
           };
 
           hcl-mode = {
@@ -417,16 +405,11 @@
           terraform-mode = {
             enable = true;
             package = epkgs: epkgs.terraform-mode;
-            hook = [ "(terraform-mode . lsp-deferred)" ];
             config = ''
               (defun my-terraform-mode-init ()
                 ;; if you want to use outline-minor-mode
                 (outline-minor-mode 1)
                 )
-              (setq lsp-semantic-tokens-enable t)
-              (setq lsp-semantic-tokens-honor-refresh-requests t)
-              (setq lsp-terraform-ls-enable-show-reference t)
-              (setq lsp-enable-links t)
               (add-hook 'terraform-mode-hook 'my-terraform-mode-init)
             '';
           };

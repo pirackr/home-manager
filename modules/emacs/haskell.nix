@@ -40,11 +40,6 @@
             '';
           };
 
-          lsp-haskell = {
-            enable = true;
-            package = (epkgs: epkgs.lsp-haskell);
-            hook = [ "(haskell-ts-mode . lsp)" ];
-          };
 
           ormolu = {
             enable = true;

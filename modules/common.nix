@@ -32,6 +32,8 @@
     pkgs.ripgrep
 
     pkgs.aspell
+    pkgs.aspellDicts.en
+
     pkgs.noto-fonts
     pkgs.nerd-fonts.fira-code
     pkgs.claude-code
