@@ -74,8 +74,10 @@ nix flake update nixpkgs
 ### Emacs Configuration
 - Complex modular Emacs setup in `modules/emacs/`
 - Uses Home Manager's `programs.emacs.init.usePackage` system
-- Includes LSP support, evil mode, tree-sitter, and language-specific configurations
-- Supports Scala, Python, Go, Nix, Terraform development
+- **Language Server Support**: Uses Eglot (built-in LSP client) with eglot-booster for enhanced performance
+- **Language Support**: Scala (metals), Python (basedpyright), Go, Nix (nil), Terraform, Haskell (HLS)
+- Includes evil mode, tree-sitter, and comprehensive language-specific configurations
+- Performance optimizations: eglot-booster, memory tuning, flymake integration
 
 ### Development Tools
 - Multiple editor support (Emacs, Vim)

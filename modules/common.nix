@@ -34,6 +34,9 @@
     pkgs.aspell
     pkgs.aspellDicts.en
 
+    # Language server performance booster
+    pkgs.emacs-lsp-booster
+
     pkgs.noto-fonts
     pkgs.nerd-fonts.fira-code
     pkgs.claude-code

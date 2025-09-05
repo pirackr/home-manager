@@ -252,6 +252,16 @@
             '';
           };
 
+          eglot-booster = {
+            enable = true;
+            package = epkgs: epkgs.eglot-booster;
+            after = [ "eglot" ];
+            config = ''
+              ;; Enable eglot-booster for better performance
+              (eglot-booster-mode 1)
+            '';
+          };
+
           poetry = {
             enable = true;
             package = epkgs: epkgs.poetry;
