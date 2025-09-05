@@ -16,8 +16,7 @@
 
   programs.kitty = {
     package = (config.lib.nixGL.wrap pkgs.kitty);
-    # package = null; # use system package
-    font.size = lib.mkForce 13;
+    font.size = lib.mkForce 18;
   };
 
   # Example: User-specific git configuration

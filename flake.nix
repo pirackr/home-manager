@@ -10,14 +10,22 @@
     flake-utils.url = "github:numtide/flake-utils";
     nixgl.url   = "github:nix-community/nixGL";
     mac-app-util.url = "github:hraban/mac-app-util";
+    claude-code.url = "github:sadjow/claude-code-nix";
   };
 
-  outputs = { nixpkgs, home-manager, flake-utils, nixgl, mac-app-util, ... }:
+  outputs = { nixpkgs, home-manager, flake-utils, nixgl, mac-app-util, claude-code, ... }:
     {
       homeConfigurations = {
         "pirackr@work" = home-manager.lib.homeManagerConfiguration {
-          pkgs = import nixpkgs { system = "aarch64-darwin"; };
+          pkgs = import nixpkgs {
+            system = "aarch64-darwin";
+            config = {
+              allowUnfree = true;
+              allowUnfreePredicate = _: true;
+            };
+          };
           modules = [
+            { nixpkgs.overlays = [ claude-code.overlays.default ]; }
             mac-app-util.homeManagerModules.default
             ./modules/common.nix
             ./users/work.nix
@@ -28,8 +36,15 @@
           };
 
         "pirackr@home" = home-manager.lib.homeManagerConfiguration {
-          pkgs = import nixpkgs { system = "x86_64-linux"; };
+          pkgs = import nixpkgs {
+            system = "x86_64-linux";
+            config = {
+              allowUnfree = true;
+              allowUnfreePredicate = _: true;
+            };
+          };
           modules = [
+            { nixpkgs.overlays = [ claude-code.overlays.default ]; }
             ./modules/common.nix
             ./users/home.nix
           ];
