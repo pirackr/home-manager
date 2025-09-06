@@ -38,12 +38,19 @@
     # Language server performance booster
     pkgs.emacs-lsp-booster
 
+    # Fonts
     pkgs.noto-fonts
+    pkgs.noto-fonts-cjk-sans
+    pkgs.noto-fonts-emoji    # Emoji support
+    pkgs.noto-fonts-extra
     pkgs.nerd-fonts.fira-code
     pkgs.claude-code
     pkgs.nodejs
   ];
 
+  # Font configuration for proper emoji support
+  fonts.fontconfig.enable = true;
+  
   # Home Manager is pretty good at managing dotfiles. The primary way to manage
   # plain files is through 'home.file'.
   home.file = {
