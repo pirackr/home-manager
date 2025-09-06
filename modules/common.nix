@@ -30,6 +30,7 @@
     pkgs.tmux
     pkgs.less
     pkgs.ripgrep
+    pkgs.htop
 
     pkgs.aspell
     pkgs.aspellDicts.en
@@ -40,6 +41,7 @@
     pkgs.noto-fonts
     pkgs.nerd-fonts.fira-code
     pkgs.claude-code
+    pkgs.nodejs
   ];
 
   # Home Manager is pretty good at managing dotfiles. The primary way to manage
