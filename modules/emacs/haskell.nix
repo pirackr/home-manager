@@ -32,12 +32,6 @@
               haskell-ts-use-indent = true;
               haskell-ts-ghci = "\"ghci\"";
             };
-            config = ''
-              (add-to-list 'treesit-language-source-alist
-               '(haskell . ("https://github.com/tree-sitter/tree-sitter-haskell" "v0.23.1")))
-              (unless (treesit-language-available-p 'haskell)
-               (treesit-install-language-grammar 'haskell))
-            '';
           };
 
 

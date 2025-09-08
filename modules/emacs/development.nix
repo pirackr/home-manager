@@ -66,10 +66,10 @@
         '';
       };
 
-      # Language modes
+      # Language modes - using built-in treesit modes
       scala-ts-mode = {
         enable = true;
-        package = epkgs: epkgs.scala-mode; # Use scala-mode instead
+        package = epkgs: epkgs.emacs; # Built-in in Emacs 29+
         mode = [ "\\.scala\\'" ];
       };
 
@@ -91,7 +91,8 @@
 
       go-ts-mode = {
         enable = true;
-        package = epkgs: epkgs.emacs; # Built-in package in newer Emacs
+        package = epkgs: epkgs.emacs; # Built-in in Emacs 29+
+        mode = [ "\\.go\\'" ];
       };
 
       # Python development

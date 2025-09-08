@@ -83,31 +83,24 @@
         hook = [ "(prog-mode . flycheck-mode)" ];
       };
 
-      # Tree-sitter for better syntax highlighting
-      tree-sitter = {
-        enable = true;
-        package = epkgs: epkgs.tree-sitter;
-        defer = true;
-        hook = [ "(prog-mode . tree-sitter-mode)" ];
-        config = ''
-          (require 'tree-sitter)
-        '';
-      };
-
-      tree-sitter-langs = {
-        enable = true;
-        package = epkgs: epkgs.tree-sitter-langs;
-        after = [ "tree-sitter" ];
-        config = ''
-          (require 'tree-sitter-langs)
-        '';
-      };
-
-      # Modern tree-sitter integration
+      # Built-in tree-sitter integration (Emacs 29+)
       treesit-auto = {
         enable = true;
         package = epkgs: epkgs.treesit-auto;
         config = ''
+          ;; Configure treesit-auto to install grammars for specific languages
+          (setq treesit-language-source-alist
+                '((haskell "https://github.com/tree-sitter/tree-sitter-haskell")
+                  (go "https://github.com/tree-sitter/tree-sitter-go")
+                  (yaml "https://github.com/ikatyang/tree-sitter-yaml")
+                  (scala "https://github.com/tree-sitter/tree-sitter-scala")))
+          
+          ;; Install grammars for the specified languages
+          (dolist (lang '(haskell go yaml scala))
+            (unless (treesit-language-available-p lang)
+              (treesit-install-language-grammar lang)))
+          
+          ;; Enable treesit-auto mode
           (treesit-auto-add-to-auto-mode-alist 'all)
           (global-treesit-auto-mode)
         '';
