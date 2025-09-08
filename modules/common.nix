@@ -45,6 +45,7 @@
     pkgs.noto-fonts-extra
     pkgs.nerd-fonts.fira-code
     pkgs.nodejs
+    pkgs.uv
   ];
 
   # Font configuration for proper emoji support
@@ -201,5 +202,11 @@
   # Let Home Manager install and manage itself.
   programs.home-manager = {
     enable = true;
+  };
+
+  # Enable Emacs daemon service
+  services.emacs = {
+    enable = true;
+    startWithUserSession = true;
   };
 }

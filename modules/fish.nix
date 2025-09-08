@@ -12,6 +12,11 @@
 
     programs.fish = {
       enable = true;
+      shellAliases = {
+        claude = "npx @anthropic-ai/claude-code";
+        gemini = "npx https://github.com/google-gemini/gemini-cli";
+        ccusage = "npx ccusage";
+      };
       interactiveShellInit = ''
         set fish_greeting # Disable greeting
 
