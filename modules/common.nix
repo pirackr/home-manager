@@ -27,7 +27,6 @@
     pkgs.nix-prefetch-github
     pkgs.curl
     pkgs.wget
-    pkgs.tmux
     pkgs.less
     pkgs.ripgrep
     pkgs.htop
@@ -91,6 +90,78 @@
   programs.direnv = {
     enable = true;
     nix-direnv.enable = true;
+  };
+
+  # Configure tmux
+  programs.tmux = {
+    enable = true;
+    prefix = "C-a";  # Change prefix from C-b to C-a
+    baseIndex = 1;   # Start window numbering at 1
+    escapeTime = 0;  # No delay for escape key press
+    keyMode = "vi";  # Use vi-style key bindings
+    mouse = true;    # Enable mouse support
+    
+    # Terminal settings
+    terminal = "screen-256color";
+    
+    # Additional configuration
+    extraConfig = ''
+      # Reload config file
+      bind r source-file ~/.config/tmux/tmux.conf \; display-message "Config reloaded!"
+      
+      # Pane splitting
+      bind | split-window -h -c "#{pane_current_path}"
+      bind - split-window -v -c "#{pane_current_path}"
+      
+      # Pane navigation with vi-style keys
+      bind h select-pane -L
+      bind j select-pane -D
+      bind k select-pane -U
+      bind l select-pane -R
+      
+      # Pane resizing
+      bind -r H resize-pane -L 5
+      bind -r J resize-pane -D 5
+      bind -r K resize-pane -U 5
+      bind -r L resize-pane -R 5
+      
+      # Window navigation
+      bind -n M-H previous-window
+      bind -n M-L next-window
+      
+      # Copy mode improvements
+      bind-key -T copy-mode-vi v send-keys -X begin-selection
+      bind-key -T copy-mode-vi y send-keys -X copy-selection-and-cancel
+      
+      # Status bar styling (Catppuccin Frappe theme to match kitty)
+      set -g status-bg "#303446"
+      set -g status-fg "#c6d0f5"
+      set -g status-left-length 40
+      set -g status-right-length 50
+      set -g status-left "#[fg=#303446,bg=#ca9ee6,bold] #S #[fg=#ca9ee6,bg=#303446]"
+      set -g status-right "#[fg=#737994]%H:%M %d-%b-%y"
+      
+      # Window status styling
+      set -g window-status-format "#[fg=#737994] #I:#W "
+      set -g window-status-current-format "#[fg=#303446,bg=#a6d189,bold] #I:#W #[fg=#a6d189,bg=#303446]"
+      
+      # Pane border styling
+      set -g pane-border-style "fg=#737994"
+      set -g pane-active-border-style "fg=#ca9ee6"
+      
+      # Message styling
+      set -g message-style "bg=#e78284,fg=#303446"
+      
+      # Clock styling
+      set -g clock-mode-colour "#8caaee"
+    '';
+    
+    plugins = with pkgs.tmuxPlugins; [
+      vim-tmux-navigator
+      tmux-fzf
+      resurrect
+      continuum
+    ];
   };
 
   # Configure kitty terminal
