@@ -44,7 +44,6 @@
     pkgs.noto-fonts-emoji    # Emoji support
     pkgs.noto-fonts-extra
     pkgs.nerd-fonts.fira-code
-    pkgs.claude-code
     pkgs.nodejs
   ];
 

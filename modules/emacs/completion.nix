@@ -59,13 +59,6 @@
           (global-anzu-mode)
         '';
       };
-
-      # Fuzzy finder
-      fzf = {
-        enable = true;
-        package = epkgs: epkgs.fzf;
-        defer = true;
-      };
-    };
+   };
   };
 }
