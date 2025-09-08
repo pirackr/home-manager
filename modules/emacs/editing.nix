@@ -7,6 +7,7 @@
       move-text = {
         enable = true;
         package = epkgs: epkgs.move-text;
+        defer = true;
         bind = {
           "M-S-<up>" = "move-text-up";
           "M-S-<down>" = "move-text-down";
@@ -26,6 +27,7 @@
       treemacs = {
         enable = true;
         package = epkgs: epkgs.treemacs;
+        defer = true;
         config = ''
           (require 'treemacs)
         '';
@@ -76,11 +78,12 @@
       diff-hl = {
         enable = true;
         package = epkgs: epkgs.diff-hl;
-        config = ''
-          (global-diff-hl-mode +1)
-          (add-hook 'dired-mode-hook 'diff-hl-dired-mode)
-          (add-hook 'magit-post-refresh-hook 'diff-hl-magit-post-refresh)
-        '';
+        defer = true;
+        hook = [
+          "(find-file . diff-hl-mode)"
+          "(dired-mode . diff-hl-dired-mode)"
+          "(magit-post-refresh . diff-hl-magit-post-refresh)"
+        ];
       };
 
       # Org mode and note-taking

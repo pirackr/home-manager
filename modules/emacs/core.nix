@@ -56,12 +56,6 @@
         '';
       };
 
-      # Basic utilities
-      which-key = {
-        enable = true;
-        package = epkgs: epkgs.which-key;
-      };
-
       editorconfig = {
         enable = true;
         package = epkgs: epkgs.editorconfig;
@@ -85,18 +79,18 @@
       flycheck = {
         enable = true;
         package = epkgs: epkgs.flycheck;
-        config = ''
-          (add-hook 'after-init-hook #'global-flycheck-mode)
-        '';
+        defer = true;
+        hook = [ "(prog-mode . flycheck-mode)" ];
       };
 
       # Tree-sitter for better syntax highlighting
       tree-sitter = {
         enable = true;
         package = epkgs: epkgs.tree-sitter;
+        defer = true;
+        hook = [ "(prog-mode . tree-sitter-mode)" ];
         config = ''
           (require 'tree-sitter)
-          (global-tree-sitter-mode)
         '';
       };
 

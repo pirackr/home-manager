@@ -22,6 +22,7 @@
       consult = {
         enable = true;
         package = epkgs: epkgs.consult;
+        defer = true;
       };
 
       # Completion framework
@@ -49,6 +50,7 @@
       anzu = {
         enable = true;
         package = epkgs: epkgs.anzu;
+        defer = true;
         bind = {
           "M-%" = "anzu-query-replace";
           "C-M-%" = "anzu-query-replace-regexp";
@@ -62,6 +64,7 @@
       fzf = {
         enable = true;
         package = epkgs: epkgs.fzf;
+        defer = true;
       };
     };
   };

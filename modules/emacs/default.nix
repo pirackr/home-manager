@@ -39,6 +39,11 @@
 
         # Additional global configuration
         earlyInit = ''
+          ;; Performance optimizations
+          (setq gc-cons-threshold 100000000)  ;; 100mb during startup
+          (setq gc-cons-percentage 0.6)
+          (setq read-process-output-max (* 1024 1024))  ;; 1mb
+
           ;; Native compilation settings
           (when (fboundp 'native-comp-available-p)
             (setq native-comp-async-report-warnings-errors 'silent)
@@ -83,6 +88,10 @@
           (when (and (fboundp 'native-comp-available-p) (native-comp-available-p))
             (message "Native compilation is available")
             (setq comp-deferred-compilation t))
+
+          ;; Reset garbage collection after startup
+          (setq gc-cons-threshold 16777216)  ;; Reset to 16mb
+          (setq gc-cons-percentage 0.1)
 
           ;; Enable which-key and editorconfig (using built-in packages)
           (which-key-mode +1)

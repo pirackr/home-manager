@@ -25,6 +25,7 @@
       all-the-icons-nerd-fonts = {
         enable = true;
         package = epkgs: epkgs.all-the-icons-nerd-fonts;
+        defer = true;
       };
 
       all-the-icons-completion = {

@@ -21,22 +21,22 @@
           ;; Performance tuning for eglot
           (setq gc-cons-threshold 100000000) ;; 100mb
           (setq read-process-output-max (* 1024 1024)) ;; 1mb
-          
+
           ;; Configure eglot server programs
           (add-to-list 'eglot-server-programs '(scala-ts-mode . ("metals")))
           (add-to-list 'eglot-server-programs '(python-mode . ("basedpyright" "--langserver")))
           (add-to-list 'eglot-server-programs '(nix-mode . ("nil")))
           (add-to-list 'eglot-server-programs '(terraform-mode . ("terraform-ls" "serve")))
           (add-to-list 'eglot-server-programs '(haskell-ts-mode . ("haskell-language-server-wrapper" "--lsp")))
-          
+
           ;; Eglot configuration
           (setq eglot-autoshutdown t)
           (setq eglot-sync-connect nil)
           (setq eglot-extend-to-xref t)
-          
+
           ;; Use flymake (eglot's default) instead of flycheck
           (setq eglot-stay-out-of '(flycheck))
-          
+
           ;; Additional eglot configuration
           (setq eglot-events-buffer-size 0) ;; Disable events buffer for performance
           (setq eglot-ignored-server-capabilities '(:hoverProvider))
@@ -111,17 +111,23 @@
       nix-mode = {
         enable = true;
         package = epkgs: epkgs.nix-mode;
+        defer = true;
+        mode = [ "\\.nix\\'" ];
       };
 
       # Infrastructure as Code
       hcl-mode = {
         enable = true;
         package = epkgs: epkgs.hcl-mode;
+        defer = true;
+        mode = [ "\\.hcl\\'" ];
       };
 
       terraform-mode = {
         enable = true;
         package = epkgs: epkgs.terraform-mode;
+        defer = true;
+        mode = [ "\\.tf\\'" "\\.tfvars\\'" ];
         config = ''
           (defun my-terraform-mode-init ()
             ;; if you want to use outline-minor-mode
@@ -129,12 +135,6 @@
             )
           (add-hook 'terraform-mode-hook 'my-terraform-mode-init)
         '';
-      };
-
-      # Additional development utilities
-      posframe = {
-        enable = true;
-        package = epkgs: epkgs.posframe;
       };
     };
   };
