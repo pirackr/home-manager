@@ -112,7 +112,7 @@
     prefix = "C-b";  
     baseIndex = 1;   # Start window numbering at 1
     escapeTime = 0;  # No delay for escape key press
-    keyMode = "vi";  # Use vi-style key bindings
+    keyMode = "emacs";  # Use vi-style key bindings
     mouse = true;    # Enable mouse support
     
     # Terminal settings
@@ -122,7 +122,7 @@
     extraConfig = ''
       # Reload config file
       bind r source-file ~/.config/tmux/tmux.conf \; display-message "Config reloaded!"
-      
+
       # Pane splitting
       bind | split-window -h -c "#{pane_current_path}"
       bind - split-window -v -c "#{pane_current_path}"
@@ -169,13 +169,6 @@
       # Clock styling
       set -g clock-mode-colour "#8caaee"
     '';
-    
-    plugins = with pkgs.tmuxPlugins; [
-      vim-tmux-navigator
-      tmux-fzf
-      resurrect
-      continuum
-    ];
   };
 
   # Configure kitty terminal
