@@ -1,6 +1,15 @@
 { config, lib, pkgs, ... }:
 
 {
+  imports = [
+    ./languages/python.nix
+    ./languages/scala.nix
+    ./languages/go.nix
+    ./languages/nix.nix
+    ./languages/terraform.nix
+    ./languages/yaml.nix
+  ];
+
   config = lib.mkIf config.modules.emacs.enable {
     programs.emacs.init.usePackage = {
       # Language Server Protocol client
@@ -8,13 +17,6 @@
         enable = true;
         package = epkgs: epkgs.eglot;
         hook = [
-          "(scala-ts-mode . eglot-ensure)"
-          "(java-mode . eglot-ensure)"
-          "(yaml-ts-mode . eglot-ensure)"
-          "(go-ts-mode . eglot-ensure)"
-          "(python-mode . eglot-ensure)"
-          "(nix-mode . eglot-ensure)"
-          "(terraform-mode . eglot-ensure)"
           "(haskell-ts-mode . eglot-ensure)"
         ];
         config = ''
@@ -53,7 +55,6 @@
           (eglot-booster-mode 1)
         '';
       };
-
       # Debug Adapter Protocol
       dap-mode = {
         enable = true;
@@ -66,71 +67,8 @@
         '';
       };
 
-      # Language modes - using built-in treesit modes
-      scala-ts-mode = {
-        enable = true;
-        package = epkgs: epkgs.emacs; # Built-in in Emacs 29+
-        mode = [ "\\.scala\\'" ];
-      };
-
-      sbt-mode = {
-        enable = true;
-        package = epkgs: epkgs.sbt-mode;
-        command = [ "sbt-start" "sbt-command" ];
-        config = ''
-          ;; WORKAROUND: https://github.com/ensime/emacs-sbt-mode/issues/31
-          ;; allows using SPACE when in the minibuffer
-          (substitute-key-definition
-           'minibuffer-complete-word
-           'self-insert-command
-           minibuffer-local-completion-map)
-           ;; sbt-supershell kills sbt-mode:  https://github.com/hvesalai/emacs-sbt-mode/issues/152
-           (setq sbt:program-options '("-Dsbt.supershell=false"))
-        '';
-      };
-
-      go-ts-mode = {
-        enable = true;
-        package = epkgs: epkgs.emacs; # Built-in in Emacs 29+
-        mode = [ "\\.go\\'" ];
-      };
-
-      # Python development
-      poetry = {
-        enable = true;
-        package = epkgs: epkgs.poetry;
-      };
-
-
-      # Nix support
-      nix-mode = {
-        enable = true;
-        package = epkgs: epkgs.nix-mode;
-        defer = true;
-        mode = [ "\\.nix\\'" ];
-      };
-
-      # Infrastructure as Code
-      hcl-mode = {
-        enable = true;
-        package = epkgs: epkgs.hcl-mode;
-        defer = true;
-        mode = [ "\\.hcl\\'" ];
-      };
-
-      terraform-mode = {
-        enable = true;
-        package = epkgs: epkgs.terraform-mode;
-        defer = true;
-        mode = [ "\\.tf\\'" "\\.tfvars\\'" ];
-        config = ''
-          (defun my-terraform-mode-init ()
-            ;; if you want to use outline-minor-mode
-            (outline-minor-mode 1)
-            )
-          (add-hook 'terraform-mode-hook 'my-terraform-mode-init)
-        '';
-      };
+      # Language-specific configurations are now in separate modules
+      # See languages/ directory for individual language setups
     };
   };
 }
