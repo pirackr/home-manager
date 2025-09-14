@@ -75,12 +75,16 @@
         '';
       };
 
-      # Syntax checking
-      flycheck = {
+      # Syntax checking (built-in)
+      flymake = {
         enable = true;
-        package = epkgs: epkgs.flycheck;
-        defer = true;
-        hook = [ "(prog-mode . flycheck-mode)" ];
+        package = epkgs: epkgs.emacs; # Built-in package
+        hook = [ "(prog-mode . flymake-mode)" ];
+        bind = {
+          "C-c ! l" = "flymake-show-buffer-diagnostics";
+          "C-c ! n" = "flymake-goto-next-error";
+          "C-c ! p" = "flymake-goto-prev-error";
+        };
       };
 
       # Built-in tree-sitter integration (Emacs 29+)

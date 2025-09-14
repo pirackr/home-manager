@@ -34,8 +34,8 @@
           (setq eglot-sync-connect nil)
           (setq eglot-extend-to-xref t)
 
-          ;; Use flymake (eglot's default) instead of flycheck
-          (setq eglot-stay-out-of '(flycheck))
+          ;; Use flymake (eglot's default)
+          (setq eglot-stay-out-of nil)
 
           ;; Additional eglot configuration
           (setq eglot-events-buffer-size 0) ;; Disable events buffer for performance
@@ -101,12 +101,6 @@
         package = epkgs: epkgs.poetry;
       };
 
-      yapfify = {
-        enable = true;
-        package = epkgs: epkgs.yapfify;
-        defer = true;
-        hook = [ "(python-mode . yapf-mode)" ];
-      };
 
       # Nix support
       nix-mode = {

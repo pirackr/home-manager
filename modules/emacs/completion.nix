@@ -113,13 +113,15 @@
         enable = true;
         package = epkgs: epkgs.corfu;
         demand = true;
-        bind = {
-          "C-n" = "corfu-next";
-          "C-p" = "corfu-previous";
-          "TAB" = "corfu-complete";
-          "RET" = "corfu-insert";
-          "M-d" = "corfu-info-documentation";
-          "M-l" = "corfu-info-location";
+        bindLocal = {
+          corfu-map = {
+            "RET" = "corfu-insert";
+            "TAB" = "corfu-complete";
+            "C-n" = "corfu-next";
+            "C-p" = "corfu-previous";
+            "M-d" = "corfu-info-documentation";
+            "M-l" = "corfu-info-location";
+          };
         };
         config = ''
           (global-corfu-mode 1)
@@ -133,11 +135,16 @@
           (setq corfu-count 10)               ; Show max 10 candidates
           (setq corfu-scroll-margin 2)        ; Scroll margin
           (setq corfu-cycle t)                ; Enable cycling
-          (setq corfu-preselect 'prompt)      ; Preselect first candidate
+          (setq corfu-preselect 'first)       ; Preselect first candidate
           (setq corfu-on-exact-match nil)     ; Don't auto-insert exact matches
 
           ;; Performance optimizations
           (setq corfu-echo-documentation 0.25) ; Show documentation in echo area
+
+          ;; TAB-TAB behavior for inserting first candidate
+          (setq tab-always-indent 'complete)   ; Enable completion on TAB
+          (setq corfu-quit-at-boundary nil)    ; Don't quit at word boundary
+          (setq corfu-quit-no-match nil)       ; Don't quit when no match
         '';
       };
 
