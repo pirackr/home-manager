@@ -96,9 +96,6 @@
           ;; Enable which-key and editorconfig (using built-in packages)
           (which-key-mode +1)
           (editorconfig-mode 1)
-
-          ;; Require magit
-          (require 'magit)
         '';
       };
     };

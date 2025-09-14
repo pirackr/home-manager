@@ -39,6 +39,7 @@
         enable = true;
         package = epkgs: epkgs.treemacs;
         defer = true;
+        command = [ "treemacs" "treemacs-select-window" ];
         config = ''
           (require 'treemacs)
         '';
@@ -48,12 +49,14 @@
         enable = true;
         package = epkgs: epkgs.treemacs-all-the-icons;
         after = [ "treemacs" ];
+        defer = true;
       };
 
       treemacs-magit = {
         enable = true;
         package = epkgs: epkgs.treemacs-magit;
-        after = [ "treemacs" ];
+        after = [ "treemacs" "magit" ];
+        defer = true;
       };
 
 
@@ -61,12 +64,15 @@
         enable = true;
         package = epkgs: epkgs.treemacs-icons-dired;
         after = [ "treemacs" ];
+        defer = true;
       };
 
       # Git integration
       magit = {
         enable = true;
         package = epkgs: epkgs.magit;
+        defer = true;
+        command = [ "magit-status" "magit-log" "magit-diff" "magit-blame" ];
       };
 
       # GitHub integration
@@ -151,9 +157,8 @@
       apheleia = {
         enable = true;
         package = epkgs: epkgs.apheleia;
-        init = ''
-          (require 'apheleia)
-        '';
+        defer = true;
+        hook = [ "(prog-mode . apheleia-mode)" ];
       };
     };
   };

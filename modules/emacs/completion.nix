@@ -7,6 +7,7 @@
       vertico = {
         enable = true;
         package = epkgs: epkgs.vertico;
+        demand = true; # Load early for minibuffer
         custom = {
           vertico-scroll-margin = 0;
           vertico-count = 20;
@@ -37,6 +38,7 @@
       marginalia = {
         enable = true;
         package = epkgs: epkgs.marginalia;
+        demand = true; # Load early for minibuffer annotations
         init = ''
           (marginalia-mode)
         '';
@@ -110,9 +112,14 @@
       company = {
         enable = true;
         package = epkgs: epkgs.company;
+        defer = true;
+        hook = [ "(prog-mode . company-mode)" "(text-mode . company-mode)" ];
         config = ''
           ;; (add-to-list 'company-backends 'company-nixos-options)
-          (global-company-mode)
+          ;; Configure company settings for better performance
+          (setq company-idle-delay 0.3)
+          (setq company-minimum-prefix-length 2)
+          (setq company-tooltip-limit 10)
         '';
       };
 
@@ -120,8 +127,9 @@
       yasnippet = {
         enable = true;
         package = epkgs: epkgs.yasnippet;
+        defer = true;
+        hook = [ "(prog-mode . yas-minor-mode)" ];
         config = ''
-          (yas-global-mode 1)
           ;; Enable yasnippet integration with eglot
           (add-hook 'eglot-managed-mode-hook 'yas-minor-mode)
         '';
