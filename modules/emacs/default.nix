@@ -29,7 +29,7 @@
           # All package configurations moved to focused modules:
           # - core.nix: dired, exec-path-from-shell, super-save, undo-fu, tree-sitter, flyspell, flycheck, which-key, editorconfig
           # - completion.nix: vertico, consult, company, yasnippet, anzu, fzf
-          # - editing.nix: move-text, projectile, treemacs, magit, forge, diff-hl, org-mode, apheleia
+          # - editing.nix: move-text, treemacs, magit, forge, diff-hl, org-mode, apheleia
           # - development.nix: eglot, eglot-booster, dap-mode, scala-ts-mode, sbt-mode, go-ts-mode, poetry, yapfify, posframe, nix-mode, hcl-mode, terraform-mode
           # - themes.nix: catppuccin-theme, doom-modeline, all-the-icons packages
         };

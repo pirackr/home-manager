@@ -14,12 +14,23 @@
         };
       };
 
-      # Project management
-      projectile = {
+      # Project management using built-in project.el
+      # Additional configuration for project.el integration
+      project = {
         enable = true;
-        package = epkgs: epkgs.projectile;
+        package = epkgs: epkgs.emacs; # Built-in package
         config = ''
-          (projectile-mode +1)
+          ;; Configure project.el settings
+          (setq project-switch-commands
+                '((project-find-file "Find file")
+                  (project-find-regexp "Find regexp")
+                  (project-dired "Dired")
+                  (magit-project-status "Magit" ?m)
+                  (project-eshell "Eshell" ?e)))
+
+          ;; Enable project.el integration with consult
+          (with-eval-after-load 'consult
+            (setq consult-project-function (lambda (_) (project-root (project-current t)))))
         '';
       };
 
@@ -45,11 +56,6 @@
         after = [ "treemacs" ];
       };
 
-      treemacs-projectile = {
-        enable = true;
-        package = epkgs: epkgs.treemacs-projectile;
-        after = [ "treemacs" ];
-      };
 
       treemacs-icons-dired = {
         enable = true;

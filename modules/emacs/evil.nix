@@ -25,8 +25,8 @@
         (evil-leader/set-leader "<SPC>")
         (evil-leader/set-key
           "a" 'org-agenda
-          "p f" 'projectile-find-file
-          "p p" 'projectile-switch-project
+          "p f" 'project-find-file
+          "p p" 'project-switch-project
           "p s" 'consult-ripgrep
           "d x w" 'delete-trailing-whitespace)
       '';
