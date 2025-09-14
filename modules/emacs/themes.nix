@@ -22,6 +22,12 @@
       };
 
       # Icons
+      all-the-icons = {
+        enable = true;
+        package = epkgs: epkgs.all-the-icons;
+        defer = true;
+      };
+
       all-the-icons-nerd-fonts = {
         enable = true;
         package = epkgs: epkgs.all-the-icons-nerd-fonts;
