@@ -109,17 +109,77 @@
       };
 
       # Completion framework
-      company = {
+      corfu = {
         enable = true;
-        package = epkgs: epkgs.company;
-        defer = true;
-        hook = [ "(prog-mode . company-mode)" "(text-mode . company-mode)" ];
+        package = epkgs: epkgs.corfu;
+        demand = true;
+        bind = {
+          "C-n" = "corfu-next";
+          "C-p" = "corfu-previous";
+          "TAB" = "corfu-complete";
+          "RET" = "corfu-insert";
+          "M-d" = "corfu-info-documentation";
+          "M-l" = "corfu-info-location";
+        };
         config = ''
-          ;; (add-to-list 'company-backends 'company-nixos-options)
-          ;; Configure company settings for better performance
-          (setq company-idle-delay 0.3)
-          (setq company-minimum-prefix-length 2)
-          (setq company-tooltip-limit 10)
+          (global-corfu-mode 1)
+
+          ;; Auto completion settings
+          (setq corfu-auto t)                 ; Enable automatic completion
+          (setq corfu-auto-delay 0.1)         ; Faster auto completion (0.1s)
+          (setq corfu-auto-prefix 1)          ; Start completion after 1 character
+          (setq corfu-min-width 20)           ; Minimum popup width
+          (setq corfu-max-width 100)          ; Maximum popup width
+          (setq corfu-count 10)               ; Show max 10 candidates
+          (setq corfu-scroll-margin 2)        ; Scroll margin
+          (setq corfu-cycle t)                ; Enable cycling
+          (setq corfu-preselect 'prompt)      ; Preselect first candidate
+          (setq corfu-on-exact-match nil)     ; Don't auto-insert exact matches
+
+          ;; Performance optimizations
+          (setq corfu-echo-documentation 0.25) ; Show documentation in echo area
+        '';
+      };
+
+      # Corfu extensions for enhanced functionality
+      cape = {
+        enable = true;
+        package = epkgs: epkgs.cape;
+        after = [ "corfu" ];
+        config = ''
+          ;; Add useful completion at point functions
+          (add-to-list 'completion-at-point-functions #'cape-dabbrev)
+          (add-to-list 'completion-at-point-functions #'cape-file)
+          (add-to-list 'completion-at-point-functions #'cape-elisp-block)
+          (add-to-list 'completion-at-point-functions #'cape-history)
+          (add-to-list 'completion-at-point-functions #'cape-keyword)
+          (add-to-list 'completion-at-point-functions #'cape-abbrev)
+        '';
+      };
+
+      # Corfu terminal support
+      corfu-terminal = {
+        enable = true;
+        package = epkgs: epkgs.corfu-terminal;
+        after = [ "corfu" ];
+        config = ''
+          ;; Enable corfu in terminal
+          (unless (display-graphic-p)
+            (corfu-terminal-mode +1))
+        '';
+      };
+
+      # Kind icons for corfu
+      kind-icon = {
+        enable = true;
+        package = epkgs: epkgs.kind-icon;
+        after = [ "corfu" ];
+        config = ''
+          ;; Add kind icons to corfu
+          (add-to-list 'corfu-margin-formatters #'kind-icon-margin-formatter)
+          ;; Customize kind icons
+          (setq kind-icon-default-face 'corfu-default)
+          (setq kind-icon-blend-background nil)
         '';
       };
 
