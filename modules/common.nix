@@ -10,6 +10,7 @@
     ./k8s.nix
     ./fcitx.nix
     ./gtk.nix
+    ./mako.nix
   ];
 
   # This value determines the Home Manager release that your configuration is

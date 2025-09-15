@@ -45,5 +45,6 @@
     emacs.enable = true;
     fcitx.enable = true;
     gtk.enable = true;  # Enable GTK with Catppuccin theme
+    mako.enable = true;  # Enable Mako notifications with Catppuccin theme
   };
 }
