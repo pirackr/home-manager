@@ -34,6 +34,11 @@
     pkgs.claude-code 
     pkgs.openssh
 
+    pkgs.firefox
+    pkgs.pcmanfm
+    pkgs.pwvucontrol
+    pkgs.adwaita-icon-theme
+
     pkgs.aspell
     pkgs.aspellDicts.en
 

@@ -14,7 +14,7 @@
 
     gtk = {
       enable = true;
-      
+
       theme = {
         name = "catppuccin-frappe-lavender-standard+default";
         package = pkgs.catppuccin-gtk.override {

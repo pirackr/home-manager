@@ -61,18 +61,18 @@
       };
 
       "cpu" = {
-        format = "  {usage}%";
+        format = "󰻠 {usage}%";
         tooltip = false;
       };
 
       "memory" = {
-        format = "  {}%";
+        format = "󰍛 {}%";
       };
 
       "temperature" = {
         critical-threshold = 80;
-        format-critical = " {temperatureC}°C";
-        format = " {temperatureC}°C";
+        format-critical = "TEMP {temperatureC}°C";
+        format = "TEMP {temperatureC}°C";
       };
 
       "battery" = {
@@ -88,29 +88,29 @@
       };
 
       "network" = {
-        format-wifi = "  {essid} ({signalStrength}%)";
-        format-ethernet = "  {ipaddr}/{cidr}";
-        tooltip-format = "  {ifname} via {gwaddr}";
-        format-linked = "  {ifname} (No IP)";
-        format-disconnected = "⚠  Disconnected";
+        format-wifi = "󰤨 {essid} ({signalStrength}%)";
+        format-ethernet = "󰈀 {ipaddr}/{cidr}";
+        tooltip-format = "󰈀 {ifname} via {gwaddr}";
+        format-linked = "󰈀 {ifname} (No IP)";
+        format-disconnected = "󰤭 Disconnected";
         format-alt = "{ifname}: {ipaddr}/{cidr}";
       };
 
       "pulseaudio" = {
         format = "{icon} {volume}%";
-        format-bluetooth = "{icon} {volume}% ";
-        format-bluetooth-muted = " {icon}";
-        format-muted = " {format_source}";
-        format-source = " {volume}%";
-        format-source-muted = "";
+        format-bluetooth = "{icon} {volume}% 󰂯";
+        format-bluetooth-muted = "󰝟 {icon}";
+        format-muted = "󰝟 {format_source}";
+        format-source = "󰍬 {volume}%";
+        format-source-muted = "󰍭";
         format-icons = {
-          headphone = "";
-          hands-free = "";
-          headset = "";
-          phone = "";
-          portable = "";
-          car = "";
-          default = ["" "" ""];
+          headphone = "󰋋";
+          hands-free = "󰋎";
+          headset = "󰋎";
+          phone = "󰏲";
+          portable = "󰦧";
+          car = "󰄋";
+          default = ["󰕿" "󰖀" "󰕾"];
         };
         on-click = "pwvucontrol";
       };

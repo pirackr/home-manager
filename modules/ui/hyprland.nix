@@ -62,7 +62,7 @@ in
       slurp
       adwaita-icon-theme
       hyprpaper
-      gemini-cli
+      hyprlock
     ];
 
     # Enable hyprland
