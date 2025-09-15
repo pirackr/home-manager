@@ -5,12 +5,10 @@
     ./git.nix
     ./fish.nix
     ./vim.nix
-    ./hyprland.nix
     ./emacs/default.nix
     ./k8s.nix
     ./fcitx.nix
-    ./gtk.nix
-    ./mako.nix
+    ./ui
   ];
 
   # This value determines the Home Manager release that your configuration is

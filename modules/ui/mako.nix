@@ -1,11 +1,11 @@
 { config, pkgs, lib, ... }:
 
 {
-  options.modules.mako = {
+  options.modules.ui.mako = {
     enable = lib.mkEnableOption "Mako notification daemon with Catppuccin theme";
   };
 
-  config = lib.mkIf config.modules.mako.enable {
+  config = lib.mkIf config.modules.ui.mako.enable {
     services.mako = {
       enable = true;
       

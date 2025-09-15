@@ -1,11 +1,11 @@
 { config, pkgs, lib, ... }:
 
 {
-  options.modules.gtk = {
+  options.modules.ui.gtk = {
     enable = lib.mkEnableOption "GTK configuration with Catppuccin theme";
   };
 
-  config = lib.mkIf config.modules.gtk.enable {
+  config = lib.mkIf config.modules.ui.gtk.enable {
     home.packages = with pkgs; [
       catppuccin-gtk
       papirus-icon-theme

@@ -35,16 +35,22 @@
 
  # User-specific configurations can override or extend common settings
   modules = {
-    # Example: Enable/disable specific modules for this user
-    # hyprland.enable = true;  # Uncomment if this user needs Hyprland
+    # Core modules
     vim.enable = true;  # Enable vim for this user
     git.enable = true;  # Enable git for this user
     fish.enable = true;  # Enable fish for this user
-    hyprland.enable = true;  # Disabled by default
     k8s.enable = true;  # Enable Kubernetes tools
     emacs.enable = true;
     fcitx.enable = true;
-    gtk.enable = true;  # Enable GTK with Catppuccin theme
-    mako.enable = true;  # Enable Mako notifications with Catppuccin theme
+    
+    # UI modules (alternatively, can use ui.enable = true to enable all)
+    ui = {
+      hyprland.enable = true;  # Hyprland window manager
+      gtk.enable = true;       # GTK theme with Catppuccin
+      mako.enable = true;      # Mako notifications
+      waybar.enable = true;    # Waybar status bar
+      rofi.enable = true;      # Rofi launcher
+      hyprlock.enable = true;  # Hyprlock screen locker
+    };
   };
 }
