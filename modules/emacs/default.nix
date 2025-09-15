@@ -31,7 +31,7 @@
           # - completion.nix: vertico, consult, company, yasnippet, anzu, fzf
           # - editing.nix: move-text, treemacs, magit, forge, diff-hl, org-mode, apheleia
           # - development.nix: eglot, eglot-booster, dap-mode, scala-ts-mode, sbt-mode, go-ts-mode, poetry, yapfify, posframe, nix-mode, hcl-mode, terraform-mode
-          # - themes.nix: catppuccin-theme, doom-modeline, all-the-icons packages
+          # - themes.nix: catppuccin-theme, doom-modeline, nerd-icons packages
         };
 
         # Basic configuration in prelude (read from file)

@@ -22,20 +22,20 @@
       };
 
       # Icons
-      all-the-icons = {
+      nerd-icons = {
         enable = true;
-        package = epkgs: epkgs.all-the-icons;
+        package = epkgs: epkgs.nerd-icons;
         defer = true;
       };
 
 
-      all-the-icons-completion = {
+      nerd-icons-completion = {
         enable = true;
-        package = epkgs: epkgs.all-the-icons-completion;
-        after = [ "marginalia" "all-the-icons" ];
-        hook = [ "(marginalia-mode . all-the-icons-completion-marginalia-setup)" ];
+        package = epkgs: epkgs.nerd-icons-completion;
+        after = [ "marginalia" "nerd-icons" ];
+        hook = [ "(marginalia-mode . nerd-icons-completion-marginalia-setup)" ];
         init = ''
-          (all-the-icons-completion-mode)
+          (nerd-icons-completion-mode)
         '';
       };
     };

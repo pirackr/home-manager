@@ -45,9 +45,9 @@
         '';
       };
 
-      treemacs-all-the-icons = {
+      treemacs-nerd-icons = {
         enable = true;
-        package = epkgs: epkgs.treemacs-all-the-icons;
+        package = epkgs: epkgs.treemacs-nerd-icons;
         after = [ "treemacs" ];
         defer = true;
       };

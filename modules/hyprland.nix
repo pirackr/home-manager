@@ -12,9 +12,9 @@ let
   browser = "firefox";
   lock = "hyprlock";
 
-  # Define color variables
-  blue = "rgb(89b4fa)";
-  base = "rgb(1e1e2e)";
+  # Define color variables - Catppuccin Frappe
+  blue = "rgb(8caaee)";
+  base = "rgb(303446)";
 
   mainMod = "SUPER";
 
@@ -56,52 +56,52 @@ in
 
     # Required packages
     home.packages = with pkgs; lib.optionals stdenv.isLinux [
-      # TODO: extract these out later 
+      # TODO: extract these out later
       waybar
       mako
       hyprpaper
-      rofi-wayland
+      rofi
       pcmanfm
       firefox
       grim
       slurp
       brightnessctl
       playerctl
-      pulseaudio
+      pwvucontrol
       adwaita-icon-theme
       hyprlock
-      # TODO Add this just because we don't want it for MacOS at first 
+      # TODO Add this just because we don't want it for MacOS at first
       gemini-cli
     ];
 
     xdg.configFile."hypr/hyprlock.conf".text = ''
-      # Catppuccin Macchiato colors
-      $rosewater = 0xf4dbd6
-      $flamingo = 0xf0c6c6
-      $pink = 0xf5bde6
-      $mauve = 0xc6a0f6
-      $red = 0xed8796
-      $maroon = 0xee99a0
-      $peach = 0xf5a97f
-      $yellow = 0xeed49f
-      $green = 0xa6da95
-      $teal = 0x8bd5ca
-      $sky = 0x91d7e3
-      $sapphire = 0x7dc4e4
-      $blue = 0x8aadf4
-      $lavender = 0xb7bdf8
-      $text = 0xcad3f5
-      $subtext1 = 0xb8c0e0
+      # Catppuccin Frappe colors
+      $rosewater = 0xf2d5cf
+      $flamingo = 0xeebebe
+      $pink = 0xf4b8e4
+      $mauve = 0xca9ee6
+      $red = 0xe78284
+      $maroon = 0xea999c
+      $peach = 0xef9f76
+      $yellow = 0xe5c890
+      $green = 0xa6d189
+      $teal = 0x81c8be
+      $sky = 0x99d1db
+      $sapphire = 0x85c1dc
+      $blue = 0x8caaee
+      $lavender = 0xbabbf1
+      $text = 0xc6d0f5
+      $subtext1 = 0xb5bfe2
       $subtext0 = 0xa5adce
-      $overlay2 = 0x939ab7
-      $overlay1 = 0x8087a2
-      $overlay0 = 0x6e738d
-      $surface2 = 0x5b6078
-      $surface1 = 0x494d64
-      $surface0 = 0x363a4f
-      $base = 0x24273a
-      $mantle = 0x1e2030
-      $crust = 0x181926
+      $overlay2 = 0x949cbb
+      $overlay1 = 0x838ba7
+      $overlay0 = 0x737994
+      $surface2 = 0x626880
+      $surface1 = 0x51576d
+      $surface0 = 0x414559
+      $base = 0x303446
+      $mantle = 0x292c3c
+      $crust = 0x232634
 
       $accent = $mauve
       $font = JetBrainsMono Nerd Font
@@ -198,6 +198,481 @@ in
       ipc = off
     '';
 
+    # Waybar configuration for Hyprland
+    xdg.configFile."waybar/config.json".text = builtins.toJSON {
+      layer = "top";
+      position = "top";
+      height = 32;
+      spacing = 4;
+
+      modules-left = [ "hyprland/workspaces" "hyprland/mode" "hyprland/scratchpad" ];
+      modules-center = [ "hyprland/window" ];
+      modules-right = [ "pulseaudio" "network" "cpu" "memory" "temperature" "battery" "clock" "tray" ];
+
+      "hyprland/workspaces" = {
+        disable-scroll = true;
+        all-outputs = true;
+        warp-on-scroll = false;
+        format = "{id}";
+        show-special = false;
+        on-click = "activate";
+        sort-by-number = true;
+      };
+
+      "hyprland/mode" = {
+        format = "<span style=\"italic\">{}</span>";
+      };
+
+      "hyprland/scratchpad" = {
+        format = "🗃️ {count}";
+        show-empty = false;
+        tooltip = true;
+        tooltip-format = "{app}: {title}";
+      };
+
+      "hyprland/window" = {
+        format = "{}";
+        max-length = 50;
+        separate-outputs = true;
+      };
+
+      tray = {
+        spacing = 10;
+      };
+
+      clock = {
+        format = "🕐 {:%H:%M}";
+        tooltip-format = "<big>{:%Y %B}</big>\n<tt><small>{calendar}</small></tt>";
+        format-alt = "📅 {:%Y-%m-%d}";
+      };
+
+      cpu = {
+        format = "🖥️ {usage}%";
+        tooltip = false;
+      };
+
+      memory = {
+        format = "🧠 {}%";
+      };
+
+      temperature = {
+        critical-threshold = 80;
+        format = "🌡️ {temperatureC}°C";
+      };
+
+      battery = {
+        states = {
+          warning = 30;
+          critical = 15;
+        };
+        format = "🔋 {capacity}%";
+        format-charging = "🔌 {capacity}%";
+        format-plugged = "🔌 {capacity}%";
+        format-alt = "🔋 {time}";
+      };
+
+      network = {
+        format-wifi = "📶 {essid} ({signalStrength}%)";
+        format-ethernet = "🔗 {ipaddr}/{cidr}";
+        tooltip-format = "{ifname} via {gwaddr}";
+        format-linked = "🔗 {ifname} (No IP)";
+        format-disconnected = "📶 Disconnected";
+        format-alt = "{ifname}: {ipaddr}/{cidr}";
+      };
+
+      pulseaudio = {
+        format = "🔊 {volume}% {format_source}";
+        format-bluetooth = "🎧 {volume}% {format_source}";
+        format-bluetooth-muted = "🎧 🔇 {format_source}";
+        format-muted = "🔇 {format_source}";
+        format-source = "🎤 {volume}%";
+        format-source-muted = "🎤 🔇";
+        on-click = "pwvucontrol";
+      };
+    };
+
+    # Rofi configuration with Catppuccin theme
+    xdg.configFile."rofi/config.rasi".text = ''
+      configuration {
+        modi: "drun,run,window";
+        show-icons: true;
+        terminal: "kitty";
+        drun-display-format: "{icon} {name}";
+        location: 0;
+        disable-history: false;
+        hide-scrollbar: true;
+        display-drun: "   Apps ";
+        display-run: "   Run ";
+        display-window: " 﩯  Window";
+        display-Network: " 󰤨  Network";
+        sidebar-mode: true;
+        font: "FiraCode Nerd Font 12";
+      }
+
+      @theme "catppuccin-frappe"
+    '';
+
+    # Rofi theme file with Catppuccin Frappe colors
+    xdg.configFile."rofi/catppuccin-frappe.rasi".text = ''
+      /* Catppuccin Frappe Colors */
+      * {
+        rosewater: #f2d5cf;
+        flamingo: #eebebe;
+        pink: #f4b8e4;
+        mauve: #ca9ee6;
+        red: #e78284;
+        maroon: #ea999c;
+        peach: #ef9f76;
+        yellow: #e5c890;
+        green: #a6d189;
+        teal: #81c8be;
+        sky: #99d1db;
+        sapphire: #85c1dc;
+        blue: #8caaee;
+        lavender: #babbf1;
+        text: #c6d0f5;
+        subtext1: #b5bfe2;
+        subtext0: #a5adce;
+        overlay2: #949cbb;
+        overlay1: #838ba7;
+        overlay0: #737994;
+        surface2: #626880;
+        surface1: #51576d;
+        surface0: #414559;
+        base: #303446;
+        mantle: #292c3c;
+        crust: #232634;
+
+        /* Global colors */
+        background-color: transparent;
+        text-color: @text;
+        font: "FiraCode Nerd Font 12";
+      }
+
+      window {
+        background-color: @base;
+        border: 2px solid;
+        border-color: @mauve;
+        border-radius: 8px;
+        width: 600px;
+        location: center;
+        anchor: center;
+      }
+
+      mainbox {
+        background-color: transparent;
+        children: [ "inputbar", "listview" ];
+        spacing: 10px;
+        padding: 10px;
+      }
+
+      inputbar {
+        background-color: @surface0;
+        text-color: @text;
+        border-radius: 4px;
+        padding: 8px 12px;
+        children: [ "prompt", "entry" ];
+      }
+
+      prompt {
+        background-color: transparent;
+        text-color: @mauve;
+        padding: 0px 8px 0px 0px;
+      }
+
+      entry {
+        background-color: transparent;
+        text-color: @text;
+        placeholder-color: @subtext0;
+        cursor: text;
+      }
+
+      listview {
+        background-color: transparent;
+        margin: 0px 0px 0px 0px;
+        spacing: 2px;
+        cycle: true;
+        dynamic: true;
+        layout: vertical;
+      }
+
+      element {
+        background-color: transparent;
+        text-color: @text;
+        orientation: horizontal;
+        border-radius: 4px;
+        padding: 8px 12px 8px 12px;
+      }
+
+      element-icon {
+        background-color: transparent;
+        text-color: inherit;
+        size: 24px;
+        cursor: inherit;
+      }
+
+      element-text {
+        background-color: transparent;
+        text-color: inherit;
+        cursor: inherit;
+        vertical-align: 0.5;
+        horizontal-align: 0.0;
+      }
+
+      element normal.normal {
+        background-color: transparent;
+        text-color: @text;
+      }
+
+      element normal.urgent {
+        background-color: @red;
+        text-color: @base;
+      }
+
+      element normal.active {
+        background-color: @green;
+        text-color: @base;
+      }
+
+      element selected.normal {
+        background-color: @mauve;
+        text-color: @base;
+      }
+
+      element selected.urgent {
+        background-color: @red;
+        text-color: @base;
+      }
+
+      element selected.active {
+        background-color: @green;
+        text-color: @base;
+      }
+
+      element alternate.normal {
+        background-color: transparent;
+        text-color: @text;
+      }
+
+      element alternate.urgent {
+        background-color: @red;
+        text-color: @base;
+      }
+
+      element alternate.active {
+        background-color: @green;
+        text-color: @base;
+      }
+
+      mode-switcher {
+        background-color: @surface0;
+        text-color: @text;
+        border-radius: 4px;
+        margin: 10px 0px 0px 0px;
+      }
+
+      button {
+        background-color: transparent;
+        text-color: @subtext0;
+        border-radius: 4px;
+        padding: 8px 12px;
+      }
+
+      button selected {
+        background-color: @mauve;
+        text-color: @base;
+      }
+
+      scrollbar {
+        width: 4px;
+        border: 0px;
+        handle-color: @surface1;
+        handle-width: 8px;
+        padding: 0;
+      }
+
+      message {
+        background-color: @surface0;
+        border-radius: 4px;
+        padding: 8px;
+        margin: 10px 0px 0px 0px;
+      }
+
+      textbox {
+        background-color: transparent;
+        text-color: @text;
+        vertical-align: 0.5;
+        horizontal-align: 0.0;
+      }
+    '';
+
+    # Waybar CSS styling with Catppuccin theme
+    xdg.configFile."waybar/style.css".text = ''
+      /* Catppuccin Frappe Colors */
+      @define-color rosewater #f2d5cf;
+      @define-color flamingo #eebebe;
+      @define-color pink #f4b8e4;
+      @define-color mauve #ca9ee6;
+      @define-color red #e78284;
+      @define-color maroon #ea999c;
+      @define-color peach #ef9f76;
+      @define-color yellow #e5c890;
+      @define-color green #a6d189;
+      @define-color teal #81c8be;
+      @define-color sky #99d1db;
+      @define-color sapphire #85c1dc;
+      @define-color blue #8caaee;
+      @define-color lavender #babbf1;
+      @define-color text #c6d0f5;
+      @define-color subtext1 #b5bfe2;
+      @define-color subtext0 #a5adce;
+      @define-color overlay2 #949cbb;
+      @define-color overlay1 #838ba7;
+      @define-color overlay0 #737994;
+      @define-color surface2 #626880;
+      @define-color surface1 #51576d;
+      @define-color surface0 #414559;
+      @define-color base #303446;
+      @define-color mantle #292c3c;
+      @define-color crust #232634;
+
+      * {
+        border: none;
+        border-radius: 0;
+        font-family: "FiraCode Nerd Font", monospace;
+        font-size: 14px;
+        min-height: 0;
+      }
+
+      window#waybar {
+        background: @base;
+        color: @text;
+      }
+
+      tooltip {
+        background: @surface0;
+        color: @text;
+        border-radius: 8px;
+        border: 1px solid @surface1;
+      }
+
+      #workspaces button {
+        padding: 0 8px;
+        background: transparent;
+        color: @subtext0;
+        border-radius: 4px;
+        transition: all 0.3s ease;
+      }
+
+      #workspaces button:hover {
+        background: @surface0;
+        color: @text;
+      }
+
+      #workspaces button.focused,
+      #workspaces button.active {
+        background: @mauve;
+        color: @base;
+      }
+
+      #workspaces button.urgent {
+        background: @red;
+        color: @base;
+      }
+
+      #mode {
+        background: @yellow;
+        color: @base;
+        padding: 0 10px;
+        margin: 0 4px;
+        border-radius: 4px;
+      }
+
+      #window {
+        color: @text;
+        font-weight: bold;
+      }
+
+      #clock,
+      #battery,
+      #cpu,
+      #memory,
+      #temperature,
+      #network,
+      #pulseaudio,
+      #tray {
+        padding: 0 10px;
+        margin: 0 2px;
+        border-radius: 4px;
+        background: @surface0;
+        color: @text;
+      }
+
+      #battery.charging {
+        background: @green;
+        color: @base;
+      }
+
+      #battery.warning:not(.charging) {
+        background: @yellow;
+        color: @base;
+      }
+
+      #battery.critical:not(.charging) {
+        background: @red;
+        color: @base;
+        animation: blink 0.5s linear infinite alternate;
+      }
+
+      @keyframes blink {
+        to {
+          background-color: @maroon;
+        }
+      }
+
+      #cpu.warning {
+        background: @yellow;
+        color: @base;
+      }
+
+      #cpu.critical {
+        background: @red;
+        color: @base;
+      }
+
+      #memory.warning {
+        background: @yellow;
+        color: @base;
+      }
+
+      #memory.critical {
+        background: @red;
+        color: @base;
+      }
+
+      #temperature.critical {
+        background: @red;
+        color: @base;
+      }
+
+      #network.disconnected {
+        background: @red;
+        color: @base;
+      }
+
+      #pulseaudio.muted {
+        background: @surface1;
+        color: @subtext0;
+      }
+
+      #tray menu {
+        background: @surface0;
+        color: @text;
+        border: 1px solid @surface1;
+        border-radius: 4px;
+      }
+    '';
+
     # Enable hyprland
     wayland.windowManager.hyprland = lib.mkIf pkgs.stdenv.isLinux {
       enable = true;
@@ -207,7 +682,7 @@ in
       # Use extraConfig for complex settings
       extraConfig = ''
         # Auto-start applications
-        exec-once=${pkgs.waybar}/bin/waybar & ${pkgs.mako}/bin/mako & ${pkgs.hyprpaper}/bin/hyprpaper
+        exec-once=${pkgs.waybar}/bin/waybar -c ~/.config/waybar/config.json -s ~/.config/waybar/style.css & ${pkgs.mako}/bin/mako & ${pkgs.hyprpaper}/bin/hyprpaper
 
         # Per-device config
         device {
@@ -218,10 +693,10 @@ in
         # Window rules v2
         windowrulev2 = suppressevent maximize, class:.*
 
-        # Volume and Media Control Binds
-        bind = , XF86AudioRaiseVolume, exec, ${pkgs.pulseaudio}/bin/pactl set-sink-volume @DEFAULT_SINK@ +10%
-        bind = , XF86AudioLowerVolume, exec, ${pkgs.pulseaudio}/bin/pactl set-sink-volume @DEFAULT_SINK@ -10%
-        bind = , XF86AudioMute, exec, ${pkgs.pulseaudio}/bin/pactl set-sink-mute @DEFAULT_SINK@ toggle
+        # Volume and Media Control Binds (using wpctl for PipeWire)
+        bind = , XF86AudioRaiseVolume, exec, wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%+
+        bind = , XF86AudioLowerVolume, exec, wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%-
+        bind = , XF86AudioMute, exec, wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle
         bind = , XF86AudioPlay, exec, ${pkgs.playerctl}/bin/playerctl play-pause
         bind = , XF86AudioPause, exec, ${pkgs.playerctl}/bin/playerctl play-pause
         bind = , XF86AudioNext, exec, ${pkgs.playerctl}/bin/playerctl next

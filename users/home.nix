@@ -44,5 +44,6 @@
     k8s.enable = true;  # Enable Kubernetes tools
     emacs.enable = true;
     fcitx.enable = true;
+    gtk.enable = true;  # Enable GTK with Catppuccin theme
   };
 }

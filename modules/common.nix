@@ -9,6 +9,7 @@
     ./emacs/default.nix
     ./k8s.nix
     ./fcitx.nix
+    ./gtk.nix
   ];
 
   # This value determines the Home Manager release that your configuration is
@@ -30,6 +31,9 @@
     pkgs.less
     pkgs.ripgrep
     pkgs.htop
+    pkgs.lm_sensors
+    pkgs.claude-code 
+    pkgs.openssh
 
     pkgs.aspell
     pkgs.aspellDicts.en
@@ -43,11 +47,17 @@
     pkgs.noto-fonts-emoji    # Emoji support
     pkgs.noto-fonts-extra
     pkgs.nerd-fonts.fira-code
+
+    pkgs.font-awesome               # FontAwesome icons
+
     pkgs.nodejs
     pkgs.uv
+
   ];
 
   # Font configuration for proper emoji support
+  # NOTE: fontconfig should be installed as systemPackages in NixOS configuration:
+  # environment.systemPackages = [ pkgs.fontconfig ];
   fonts.fontconfig.enable = true;
   
   # Home Manager is pretty good at managing dotfiles. The primary way to manage
