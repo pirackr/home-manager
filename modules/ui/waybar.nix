@@ -70,9 +70,11 @@
       };
 
       "temperature" = {
+        thermal-zone = 0;
+        hwmon-path = "/sys/devices/pci0000:00/0000:00:18.3/hwmon/hwmon2/temp1_input";
         critical-threshold = 80;
-        format-critical = "TEMP {temperatureC}°C";
-        format = "TEMP {temperatureC}°C";
+        format-critical = "🌡️ {temperatureC}°C";
+        format = "🌡️ {temperatureC}°C";
       };
 
       "battery" = {

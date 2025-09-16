@@ -30,11 +30,9 @@
     pkgs.less
     pkgs.ripgrep
     pkgs.htop
-    pkgs.claude-code 
+    pkgs.claude-code
     pkgs.openssh
-
-  
-    pkgs.adwaita-icon-theme
+    pkgs.kind
 
     pkgs.aspell
     pkgs.aspellDicts.en
@@ -42,13 +40,15 @@
     # Language server performance booster
     pkgs.emacs-lsp-booster
 
+    # Nix language server
+    pkgs.nixd
+
     # Fonts
     pkgs.noto-fonts
     pkgs.noto-fonts-cjk-sans
     pkgs.noto-fonts-emoji    # Emoji support
     pkgs.noto-fonts-extra
     pkgs.nerd-fonts.fira-code
-
     pkgs.font-awesome               # FontAwesome icons
 
     pkgs.nodejs
@@ -64,9 +64,10 @@
   # NOTE: fontconfig should be installed as systemPackages in NixOS configuration:
   # environment.systemPackages = [ pkgs.fontconfig ];
   fonts.fontconfig.enable = true;
-  
+
   # Home Manager is pretty good at managing dotfiles. The primary way to manage
   # plain files is through 'home.file'.
+
   home.file = {
     # # Building this configuration will create a copy of 'dotfiles/screenrc' in
     # # the Nix store. Activating the configuration will then make '~/.screenrc' a
@@ -110,15 +111,15 @@
   # Configure tmux
   programs.tmux = {
     enable = true;
-    prefix = "C-b";  
+    prefix = "C-b";
     baseIndex = 1;   # Start window numbering at 1
     escapeTime = 0;  # No delay for escape key press
     keyMode = "emacs";  # Use vi-style key bindings
     mouse = true;    # Enable mouse support
-    
+
     # Terminal settings
     terminal = "xterm-kitty";
-    
+
     # Additional configuration
     extraConfig = ''
       # Reload config file
@@ -127,27 +128,27 @@
       # Pane splitting
       bind | split-window -h -c "#{pane_current_path}"
       bind - split-window -v -c "#{pane_current_path}"
-      
+
       # Pane navigation with vi-style keys
       bind h select-pane -L
       bind j select-pane -D
       bind k select-pane -U
       bind l select-pane -R
-      
+
       # Pane resizing
       bind -r H resize-pane -L 5
       bind -r J resize-pane -D 5
       bind -r K resize-pane -U 5
       bind -r L resize-pane -R 5
-      
+
       # Window navigation
       bind -n M-H previous-window
       bind -n M-L next-window
-      
+
       # Copy mode improvements
       bind-key -T copy-mode-vi v send-keys -X begin-selection
       bind-key -T copy-mode-vi y send-keys -X copy-selection-and-cancel
-      
+
       # Status bar styling (Catppuccin Frappe theme to match kitty)
       set -g status-bg "#303446"
       set -g status-fg "#c6d0f5"
@@ -155,18 +156,18 @@
       set -g status-right-length 50
       set -g status-left "#[fg=#303446,bg=#ca9ee6,bold] #S #[fg=#ca9ee6,bg=#303446]"
       set -g status-right "#[fg=#737994]%H:%M %d-%b-%y"
-      
+
       # Window status styling
       set -g window-status-format "#[fg=#737994] #I:#W "
       set -g window-status-current-format "#[fg=#303446,bg=#a6d189,bold] #I:#W #[fg=#a6d189,bg=#303446]"
-      
+
       # Pane border styling
       set -g pane-border-style "fg=#737994"
       set -g pane-active-border-style "fg=#ca9ee6"
-      
+
       # Message styling
       set -g message-style "bg=#e78284,fg=#303446"
-      
+
       # Clock styling
       set -g clock-mode-colour "#8caaee"
     '';

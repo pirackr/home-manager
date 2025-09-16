@@ -10,10 +10,9 @@
     flake-utils.url = "github:numtide/flake-utils";
     nixgl.url   = "github:nix-community/nixGL";
     mac-app-util.url = "github:hraban/mac-app-util";
-    claude-code.url = "github:sadjow/claude-code-nix";
   };
 
-  outputs = { nixpkgs, home-manager, flake-utils, nixgl, mac-app-util, claude-code, ... }:
+  outputs = { nixpkgs, home-manager, flake-utils, nixgl, mac-app-util, ... }:
     {
       homeConfigurations = {
         "pirackr@work" = home-manager.lib.homeManagerConfiguration {
@@ -25,7 +24,6 @@
             };
           };
           modules = [
-            { nixpkgs.overlays = [ claude-code.overlays.default ]; }
             mac-app-util.homeManagerModules.default
             ./modules/common.nix
             ./users/work.nix
@@ -44,7 +42,6 @@
             };
           };
           modules = [
-            { nixpkgs.overlays = [ claude-code.overlays.default ]; }
             ./modules/common.nix
             ./users/home.nix
           ];

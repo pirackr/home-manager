@@ -18,6 +18,7 @@
         package = epkgs: epkgs.eglot;
         hook = [
           "(haskell-ts-mode . eglot-ensure)"
+          "(nix-mode . eglot-ensure)"
         ];
         config = ''
           ;; Performance tuning for eglot
@@ -27,7 +28,7 @@
           ;; Configure eglot server programs
           (add-to-list 'eglot-server-programs '(scala-ts-mode . ("metals")))
           (add-to-list 'eglot-server-programs '(python-mode . ("basedpyright" "--langserver")))
-          (add-to-list 'eglot-server-programs '(nix-mode . ("nil")))
+          (add-to-list 'eglot-server-programs '(nix-mode . ("nixd")))
           (add-to-list 'eglot-server-programs '(terraform-mode . ("terraform-ls" "serve")))
           (add-to-list 'eglot-server-programs '(haskell-ts-mode . ("haskell-language-server-wrapper" "--lsp")))
 

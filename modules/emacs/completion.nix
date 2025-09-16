@@ -166,7 +166,7 @@
 
       # Corfu terminal support
       corfu-terminal = {
-        enable = true;
+        enable = false;
         package = epkgs: epkgs.corfu-terminal;
         after = [ "corfu" ];
         config = ''

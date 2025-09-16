@@ -9,9 +9,6 @@
         package = epkgs: epkgs.nix-mode;
         defer = true;
         mode = [ "\\.nix\\'" ];
-        hook = [
-          "(nix-mode . eglot-ensure)"
-        ];
         config = ''
           ;; Configure nix-mode settings
           (setq nix-nixfmt-bin "nixpkgs-fmt")
