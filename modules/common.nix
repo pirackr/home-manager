@@ -30,13 +30,10 @@
     pkgs.less
     pkgs.ripgrep
     pkgs.htop
-    pkgs.lm_sensors
     pkgs.claude-code 
     pkgs.openssh
 
-    pkgs.firefox
-    pkgs.pcmanfm
-    pkgs.pwvucontrol
+  
     pkgs.adwaita-icon-theme
 
     pkgs.aspell
@@ -56,7 +53,11 @@
 
     pkgs.nodejs
     pkgs.uv
-
+  ] ++ lib.optionals pkgs.stdenv.isLinux [
+    pkgs.firefox
+    pkgs.pcmanfm
+    pkgs.pwvucontrol
+    pkgs.lm_sensors
   ];
 
   # Font configuration for proper emoji support
