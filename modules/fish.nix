@@ -27,6 +27,7 @@
 
       plugins = [
         { name = "grc"; src = pkgs.fishPlugins.grc.src; }
+        { name = "plugin-git"; src = pkgs.fishPlugins.plugin-git.src; }
         {
           name = "foreign-env";
           src = pkgs.fetchFromGitHub {
