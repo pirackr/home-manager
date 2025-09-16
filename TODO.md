@@ -3,3 +3,4 @@
 - [ ] emacs/corfu: Don't show no match if no matches?
 - [ ] emacs/corfu: vi mode save file (:w) need ":w RET RET" 
 - [ ] Setup GPG and use it for git? 
+- [ ] docker still needs to be system package?

@@ -33,7 +33,6 @@
     pkgs.claude-code
     pkgs.openssh
     pkgs.kind
-    pkgs.docker
     pkgs.helm
 
     pkgs.aspell
