@@ -99,16 +99,8 @@
                   (yaml "https://github.com/ikatyang/tree-sitter-yaml")
                   (scala "https://github.com/tree-sitter/tree-sitter-scala")))
 
-          ;; Avoid tree-sitter grammar compilation on macOS GUI sessions; it slows startup dramatically.
-          (unless (eq system-type 'darwin)
-            ;; Install grammars for the specified languages when they are missing
-            (dolist (lang '(haskell go yaml scala))
-              (unless (treesit-language-available-p lang)
-                (treesit-install-language-grammar lang)))
-
-            ;; Enable treesit-auto mode once grammars are ensured
-            (treesit-auto-add-to-auto-mode-alist 'all)
-            (global-treesit-auto-mode))
+          ;; Skip automatic tree-sitter grammar installation; install manually when needed to
+          ;; avoid blocking startup on large tree-sitter builds.
         '';
         custom = {
           treesit-auto-install = "'prompt";
