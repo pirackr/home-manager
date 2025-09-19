@@ -33,7 +33,7 @@
     pkgs.claude-code
     pkgs.openssh
     pkgs.kind
-    pkgs.helm
+    pkgs.kubernetes-helm
 
     pkgs.aspell
     pkgs.aspellDicts.en

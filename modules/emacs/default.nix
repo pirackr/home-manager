@@ -44,6 +44,14 @@
           (setq gc-cons-percentage 0.6)
           (setq read-process-output-max (* 1024 1024))  ;; 1mb
 
+          ;; Defer file-name handlers during startup for faster I/O (restored after init)
+          (defvar hm--file-name-handler-alist file-name-handler-alist)
+          (setq file-name-handler-alist nil)
+          (add-hook 'emacs-startup-hook
+                    (lambda ()
+                      (setq file-name-handler-alist hm--file-name-handler-alist)
+                      (makunbound 'hm--file-name-handler-alist)))
+
           ;; Native compilation settings
           (when (fboundp 'native-comp-available-p)
             (setq native-comp-async-report-warnings-errors 'silent)

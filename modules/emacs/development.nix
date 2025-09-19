@@ -60,11 +60,18 @@
       dap-mode = {
         enable = true;
         package = epkgs: epkgs.dap-mode;
-        config = ''
-          ;; Enable dap-mode and dap-ui-mode globally for supported languages
-          (dap-mode 1)
-          (dap-ui-mode 1)
-          (dap-tooltip-mode 1)
+        defer = true;
+        command = [ "dap-mode" "dap-debug" "dap-debug-edit-template" ];
+        hook = [
+          "(python-mode . dap-mode)"
+          "(go-ts-mode . dap-mode)"
+          "(scala-ts-mode . dap-mode)"
+          "(dap-mode . dap-ui-mode)"
+          "(dap-mode . dap-tooltip-mode)"
+        ];
+        init = ''
+          ;; Load DAP on demand; avoid global activation during startup.
+          (setq dap-auto-configure-mode t)
         '';
       };
 

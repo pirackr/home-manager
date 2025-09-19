@@ -102,6 +102,7 @@
       org = {
         enable = true;
         package = epkgs: epkgs.org;
+        defer = true;
         config = ''
           (setq evil-want-C-i-jump nil)
 
@@ -115,12 +116,12 @@
              ("WIP" . "#E35DBF")
              ("KILL" . (:foreground "white" :background "#4d4d4d" :weight bold))
              ("DONE" . "#008080")))
-          (setq org-directory "/ssh:www-data@silly-wombat.pirackr.xyz:/org")
-          (setq org-agenda-files (list org-directory))
-          (setq org-refile-targets  '((org-agenda-files :maxlevel . 2)))
+
+          ;; Agenda directories intentionally disabled; reintroduce once a
+          ;; faster backing store is available for all platforms.
+
           (setq org-outline-path-complete-in-steps nil)         ; Refile in a single go
           (setq org-refile-use-outline-path t)
-          (setq org-roam-directory "/ssh:www-data@silly-wombat.pirackr.xyz:/org/notes")
 
           (setq org-agenda-custom-commands `((" " "Agenda"
                                             ((agenda "Today"
