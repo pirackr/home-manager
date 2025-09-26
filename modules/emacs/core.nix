@@ -61,6 +61,29 @@
         package = epkgs: epkgs.editorconfig;
       };
 
+      # Remote editing performance tweaks
+      tramp = {
+        enable = true;
+        package = epkgs: epkgs.emacs; # Built-in package
+        config = ''
+          (with-eval-after-load 'tramp
+            (let ((dir (file-name-as-directory
+                        (locate-user-emacs-file "tramp-auto-save/"))))
+              (setq tramp-use-ssh-controlmaster-options nil
+                    tramp-connection-timeout 5
+                    tramp-verbose 1
+                    tramp-inline-compress-start-size 1000
+                    tramp-copy-size-limit 102400
+                    tramp-auto-save-directory dir)
+                (unless (file-directory-p dir)
+                  (make-directory dir t))))
+
+          (with-eval-after-load 'vc-hooks
+            (setq vc-ignore-dir-regexp
+                  (format "\\(%s\\)\\|%s" vc-ignore-dir-regexp tramp-file-name-regexp)))
+        '';
+      };
+
       # Spell checking
       jinx = {
         enable = true;

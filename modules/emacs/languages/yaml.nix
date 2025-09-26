@@ -7,7 +7,7 @@
       yaml-ts-mode = {
         enable = true;
         package = epkgs: epkgs.emacs; # Built-in in Emacs 29+
-        mode = [ "\\.ya?ml\\'" ];
+        mode = [ ''("\\.ya?ml\\'" . yaml-ts-mode)'' ];
         hook = [
           "(yaml-ts-mode . eglot-ensure)"
         ];

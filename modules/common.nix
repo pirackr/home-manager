@@ -46,6 +46,7 @@
 
     # Nix language server
     pkgs.nixd
+    pkgs.yaml-language-server
 
     # Fonts
     pkgs.noto-fonts
