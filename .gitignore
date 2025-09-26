@@ -13,3 +13,5 @@ result-*
 .#*
 .envrc
 git-crypt-key
+
+.serena/

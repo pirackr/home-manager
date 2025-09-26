@@ -25,12 +25,14 @@
   home.packages = [
     pkgs.neofetch
     pkgs.nix-prefetch-github
+    pkgs.nixpkgs-fmt
     pkgs.curl
     pkgs.wget
     pkgs.less
     pkgs.ripgrep
     pkgs.htop
     pkgs.claude-code
+    pkgs.codex
     pkgs.openssh
     pkgs.kind
     pkgs.kubernetes-helm

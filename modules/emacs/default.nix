@@ -83,6 +83,58 @@
           ;; Enable which-key and editorconfig (using built-in packages)
           (which-key-mode +1)
           (editorconfig-mode 1)
+
+          ;; Report startup time and garbage collection count once Emacs finishes booting.
+          (add-hook 'emacs-startup-hook
+                    (lambda ()
+                      (message "[perf] Emacs ready in %.2fs (GCs: %d)"
+                               (float-time (time-subtract (current-time) before-init-time))
+                               gcs-done)))
+
+          ;; Lightweight command duration logger for interactive commands.
+          (defgroup hm-performance nil
+            "Home Manager performance helpers."
+            :group 'convenience)
+
+          (defcustom hm-command-timer-threshold 0.20
+            "Minimum number of seconds a command must take before it is logged."
+            :type 'number
+            :group 'hm-performance)
+
+          (defvar hm--command-timer-start nil
+            "Internal timestamp for the last command start time.")
+
+          (defvar hm--command-timer-last-command nil
+            "Internal reference to the command currently being timed.")
+
+          (defun hm--command-timer-pre ()
+            (setq hm--command-timer-start (current-time))
+            (setq hm--command-timer-last-command this-command))
+
+          (defun hm--command-timer-post ()
+            (when (and hm--command-timer-start hm--command-timer-last-command)
+              (let* ((end (current-time))
+                     (elapsed (float-time (time-subtract end hm--command-timer-start))))
+                (when (> elapsed hm-command-timer-threshold)
+                  (message "[perf] %s completed in %.3fs"
+                           hm--command-timer-last-command
+                           elapsed)))
+              (setq hm--command-timer-start nil)
+              (setq hm--command-timer-last-command nil)))
+
+          (define-minor-mode hm-command-timer-mode
+            "Global minor mode to report slow interactive commands."
+            :global t
+            (if hm-command-timer-mode
+                (progn
+                  (remove-hook 'pre-command-hook #'hm--command-timer-pre)
+                  (remove-hook 'post-command-hook #'hm--command-timer-post)
+                  (add-hook 'pre-command-hook #'hm--command-timer-pre)
+                  (add-hook 'post-command-hook #'hm--command-timer-post))
+              (remove-hook 'pre-command-hook #'hm--command-timer-pre)
+              (remove-hook 'post-command-hook #'hm--command-timer-post)))
+
+          (hm-command-timer-mode 1)
         '';
       };
     };
