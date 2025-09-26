@@ -27,7 +27,7 @@
         # Core usePackage configuration remains empty as all packages are now in focused modules
         usePackage = {
           # All package configurations moved to focused modules:
-          # - core.nix: dired, exec-path-from-shell, super-save, undo-fu, tree-sitter, flyspell, flycheck, which-key, editorconfig
+          # - core.nix: dired, exec-path-from-shell, super-save, undo-fu, tree-sitter, jinx, flymake, which-key, editorconfig
           # - completion.nix: vertico, consult, company, yasnippet, anzu, fzf
           # - editing.nix: move-text, treemacs, magit, forge, diff-hl, org-mode, apheleia
           # - development.nix: eglot, eglot-booster, dap-mode, scala-ts-mode, sbt-mode, go-ts-mode, poetry, yapfify, posframe, nix-mode, hcl-mode, terraform-mode

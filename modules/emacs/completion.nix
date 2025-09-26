@@ -7,7 +7,7 @@
       vertico = {
         enable = true;
         package = epkgs: epkgs.vertico;
-        demand = true; # Load early for minibuffer
+        defer = true;
         custom = {
           vertico-scroll-margin = 0;
           vertico-count = 20;
@@ -15,7 +15,7 @@
           vertico-cycle = true;
         };
         init = ''
-          (vertico-mode)
+          (add-hook 'after-init-hook #'vertico-mode)
           ;; Enable cycling for `vertico-next' and `vertico-previous'.
           (setq vertico-cycle t)
           ;; Use `consult-completion-in-region' if Vertico is enabled.
@@ -38,9 +38,9 @@
       marginalia = {
         enable = true;
         package = epkgs: epkgs.marginalia;
-        demand = true; # Load early for minibuffer annotations
+        defer = true;
         init = ''
-          (marginalia-mode)
+          (add-hook 'after-init-hook #'marginalia-mode)
         '';
         bind = {
           "M-A" = "marginalia-cycle";
@@ -112,7 +112,7 @@
       corfu = {
         enable = true;
         package = epkgs: epkgs.corfu;
-        demand = true;
+        defer = true;
         bindLocal = {
           corfu-map = {
             "RET" = "corfu-insert";
@@ -124,27 +124,43 @@
           };
         };
         config = ''
-          (global-corfu-mode 1)
+          ;; Default to manual completion to avoid CAPF churn in every buffer.
+          (setq corfu-auto nil)
+          (setq corfu-auto-delay 0.12)
+          (setq corfu-auto-prefix 2)
+          (setq corfu-min-width 20)
+          (setq corfu-max-width 100)
+          (setq corfu-count 10)
+          (setq corfu-scroll-margin 2)
+          (setq corfu-cycle t)
+          (setq corfu-preselect 'first)
+          (setq corfu-on-exact-match nil)
+          (setq corfu-echo-documentation 0.25)
+          (setq tab-always-indent 'complete)
+          (setq corfu-quit-at-boundary t)
+          (setq corfu-quit-no-match t)
 
-          ;; Auto completion settings
-          (setq corfu-auto t)                 ; Enable automatic completion
-          (setq corfu-auto-delay 0.1)         ; Faster auto completion (0.1s)
-          (setq corfu-auto-prefix 1)          ; Start completion after 1 character
-          (setq corfu-min-width 20)           ; Minimum popup width
-          (setq corfu-max-width 100)          ; Maximum popup width
-          (setq corfu-count 10)               ; Show max 10 candidates
-          (setq corfu-scroll-margin 2)        ; Scroll margin
-          (setq corfu-cycle t)                ; Enable cycling
-          (setq corfu-preselect 'first)       ; Preselect first candidate
-          (setq corfu-on-exact-match nil)     ; Don't auto-insert exact matches
+          (defun hm/corfu-prog-mode ()
+            "Enable `corfu-mode' with manual triggering for programming buffers."
+            (corfu-mode 1))
 
-          ;; Performance optimizations
-          (setq corfu-echo-documentation 0.25) ; Show documentation in echo area
+          (add-hook 'prog-mode-hook #'hm/corfu-prog-mode)
+          (add-hook 'conf-mode-hook #'hm/corfu-prog-mode)
 
-          ;; TAB-TAB behavior for inserting first candidate
-          (setq tab-always-indent 'complete)   ; Enable completion on TAB
-          (setq corfu-quit-at-boundary nil)    ; Don't quit at word boundary
-          (setq corfu-quit-no-match nil)       ; Don't quit when no match
+          (defun hm/corfu-eglot-toggle ()
+            "Enable aggressive Corfu auto completion only when Eglot manages the buffer."
+            (if eglot-managed-mode
+                (progn
+                  (corfu-mode 1)
+                  (setq-local corfu-auto t)
+                  (setq-local corfu-auto-prefix 1)
+                  (setq-local corfu-quit-no-match nil))
+              (setq-local corfu-auto nil)
+              (setq-local corfu-auto-prefix 2)
+              (setq-local corfu-quit-no-match t)))
+
+          (with-eval-after-load 'eglot
+            (add-hook 'eglot-managed-mode-hook #'hm/corfu-eglot-toggle))
         '';
       };
 
@@ -224,6 +240,6 @@
           (savehist-mode)
         '';
       };
-   };
+    };
   };
 }

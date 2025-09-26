@@ -21,10 +21,6 @@
           "(nix-mode . eglot-ensure)"
         ];
         config = ''
-          ;; Performance tuning for eglot
-          (setq gc-cons-threshold 100000000) ;; 100mb
-          (setq read-process-output-max (* 1024 1024)) ;; 1mb
-
           ;; Configure eglot server programs
           (add-to-list 'eglot-server-programs '(scala-ts-mode . ("metals")))
           (add-to-list 'eglot-server-programs '(python-mode . ("basedpyright" "--langserver")))
@@ -32,17 +28,37 @@
           (add-to-list 'eglot-server-programs '(terraform-mode . ("terraform-ls" "serve")))
           (add-to-list 'eglot-server-programs '(haskell-ts-mode . ("haskell-language-server-wrapper" "--lsp")))
 
-          ;; Eglot configuration
+          ;; Core Eglot configuration
           (setq eglot-autoshutdown t)
           (setq eglot-sync-connect nil)
           (setq eglot-extend-to-xref t)
-
-          ;; Use flymake (eglot's default)
           (setq eglot-stay-out-of nil)
-
-          ;; Additional eglot configuration
           (setq eglot-events-buffer-size 0) ;; Disable events buffer for performance
           (setq eglot-ignored-server-capabilities '(:hoverProvider))
+
+          ;; Track GC tuning per active Eglot buffer to keep interactive
+          ;; commands snappy outside of LSP sessions.
+          (defvar hm/eglot--managed-buffer-count 0
+            "Number of buffers currently managed by Eglot.")
+          (defvar hm/eglot--gc-threshold-backup gc-cons-threshold
+            "GC threshold value to restore when Eglot releases all buffers.")
+
+          (defun hm/eglot--tune ()
+            "Raise GC threshold while Eglot is active and restore when it exits."
+            (if eglot-managed-mode
+                (progn
+                  (when (= hm/eglot--managed-buffer-count 0)
+                    (setq hm/eglot--gc-threshold-backup gc-cons-threshold))
+                  (setq hm/eglot--managed-buffer-count
+                        (1+ hm/eglot--managed-buffer-count))
+                  (setq gc-cons-threshold 100000000)
+                  (setq-local read-process-output-max (* 1024 1024)))
+              (setq hm/eglot--managed-buffer-count
+                    (max 0 (1- hm/eglot--managed-buffer-count)))
+              (when (= hm/eglot--managed-buffer-count 0)
+                (setq gc-cons-threshold hm/eglot--gc-threshold-backup))))
+
+          (add-hook 'eglot-managed-mode-hook #'hm/eglot--tune)
         '';
       };
 
@@ -78,5 +94,7 @@
       # Language-specific configurations are now in separate modules
       # See languages/ directory for individual language setups
     };
+
+    home.sessionVariables.EGLOT_BOOTSTRAP_EXEC = "emacs-lsp-booster";
   };
 }

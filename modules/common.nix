@@ -39,6 +39,7 @@
 
     pkgs.aspell
     pkgs.aspellDicts.en
+    pkgs.enchant
 
     # Language server performance booster
     pkgs.emacs-lsp-booster
@@ -49,10 +50,10 @@
     # Fonts
     pkgs.noto-fonts
     pkgs.noto-fonts-cjk-sans
-    pkgs.noto-fonts-emoji    # Emoji support
+    pkgs.noto-fonts-emoji # Emoji support
     pkgs.noto-fonts-extra
     pkgs.nerd-fonts.fira-code
-    pkgs.font-awesome               # FontAwesome icons
+    pkgs.font-awesome # FontAwesome icons
 
     pkgs.nodejs
     pkgs.uv
@@ -115,10 +116,10 @@
   programs.tmux = {
     enable = true;
     prefix = "C-b";
-    baseIndex = 1;   # Start window numbering at 1
-    escapeTime = 0;  # No delay for escape key press
-    keyMode = "emacs";  # Use vi-style key bindings
-    mouse = true;    # Enable mouse support
+    baseIndex = 1; # Start window numbering at 1
+    escapeTime = 0; # No delay for escape key press
+    keyMode = "emacs"; # Use vi-style key bindings
+    mouse = true; # Enable mouse support
 
     # Terminal settings
     terminal = "xterm-kitty";

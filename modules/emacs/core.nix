@@ -62,16 +62,25 @@
       };
 
       # Spell checking
-      flyspell = {
+      jinx = {
         enable = true;
-        package = epkgs: epkgs.emacs; # Built-in package
+        package = epkgs: epkgs.jinx;
+        hook = [
+          "(text-mode . jinx-mode)"
+          "(prog-mode . jinx-mode)"
+          "(conf-mode . jinx-mode)"
+        ];
+        bind = {
+          "M-$" = "jinx-correct";
+          "C-M-$" = "jinx-languages";
+        };
         config = ''
-          (when (eq system-type 'windows-nt)
-            (add-to-list 'exec-path "C:/Program Files (x86)/Aspell/bin/"))
-          (setq ispell-program-name "aspell" ; use aspell instead of ispell
-                ispell-extra-args '("--sug-mode=ultra"))
-          (add-hook 'text-mode-hook #'flyspell-mode)
-          (add-hook 'prog-mode-hook #'flyspell-prog-mode)
+          ;; Default to English spell checking; customise via `jinx-languages` as needed.
+          (setq jinx-languages "en_US")
+
+          (with-eval-after-load 'jinx
+            (define-key jinx-mode-map (kbd "M-$") #'jinx-correct)
+            (define-key jinx-mode-map (kbd "C-M-$") #'jinx-languages))
         '';
       };
 
@@ -85,6 +94,12 @@
           "C-c ! n" = "flymake-goto-next-error";
           "C-c ! p" = "flymake-goto-prev-error";
         };
+        config = ''
+          ;; Let Flymake wait a moment before invoking heavy analyzers.
+          (setq flymake-no-changes-timeout 1.0)
+          (setq flymake-start-on-flymake-mode t)
+          (setq flymake-start-on-save-buffer t)
+        '';
       };
 
       # Built-in tree-sitter integration (Emacs 29+)
