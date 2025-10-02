@@ -7,7 +7,7 @@
 
   config = lib.mkIf config.modules.ui.rofi.enable {
     home.packages = with pkgs; [
-      rofi-wayland
+      rofi
     ];
 
     # Rofi configuration with Catppuccin theme

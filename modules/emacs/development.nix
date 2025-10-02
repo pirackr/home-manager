@@ -19,6 +19,7 @@
         hook = [
           "(haskell-ts-mode . eglot-ensure)"
           "(nix-mode . eglot-ensure)"
+          "(go-ts-mode . eglot-ensure)"
         ];
         config = ''
           ;; Configure eglot server programs
@@ -27,6 +28,7 @@
           (add-to-list 'eglot-server-programs '(nix-mode . ("nixd")))
           (add-to-list 'eglot-server-programs '(terraform-mode . ("terraform-ls" "serve")))
           (add-to-list 'eglot-server-programs '(haskell-ts-mode . ("haskell-language-server-wrapper" "--lsp")))
+
 
           ;; Core Eglot configuration
           (setq eglot-autoshutdown t)
@@ -45,18 +47,19 @@
 
           (defun hm/eglot--tune ()
             "Raise GC threshold while Eglot is active and restore when it exits."
-            (if eglot-managed-mode
-                (progn
-                  (when (= hm/eglot--managed-buffer-count 0)
-                    (setq hm/eglot--gc-threshold-backup gc-cons-threshold))
-                  (setq hm/eglot--managed-buffer-count
-                        (1+ hm/eglot--managed-buffer-count))
-                  (setq gc-cons-threshold 100000000)
-                  (setq-local read-process-output-max (* 1024 1024)))
-              (setq hm/eglot--managed-buffer-count
-                    (max 0 (1- hm/eglot--managed-buffer-count)))
-              (when (= hm/eglot--managed-buffer-count 0)
-                (setq gc-cons-threshold hm/eglot--gc-threshold-backup))))
+            (when (boundp 'eglot-managed-mode)
+              (if eglot-managed-mode
+                  (progn
+                    (when (= hm/eglot--managed-buffer-count 0)
+                      (setq hm/eglot--gc-threshold-backup gc-cons-threshold))
+                    (setq hm/eglot--managed-buffer-count
+                          (1+ hm/eglot--managed-buffer-count))
+                    (setq gc-cons-threshold 100000000)
+                    (setq-local read-process-output-max (* 1024 1024)))
+                (setq hm/eglot--managed-buffer-count
+                      (max 0 (1- hm/eglot--managed-buffer-count)))
+                (when (= hm/eglot--managed-buffer-count 0)
+                  (setq gc-cons-threshold hm/eglot--gc-threshold-backup)))))
 
           (add-hook 'eglot-managed-mode-hook #'hm/eglot--tune)
         '';

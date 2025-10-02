@@ -7,9 +7,8 @@
       go-ts-mode = {
         enable = true;
         package = epkgs: epkgs.emacs; # Built-in in Emacs 29+
-        mode = [ "\\.go\\'" ];
-        hook = [
-          "(go-ts-mode . eglot-ensure)"
+        mode = [
+          ''("\\.go\\'" . go-ts-mode)''
         ];
       };
 
@@ -17,7 +16,9 @@
       go-mod-ts-mode = {
         enable = true;
         package = epkgs: epkgs.emacs; # Built-in in Emacs 29+
-        mode = [ "go\\.mod\\'" ];
+        mode = [
+          ''("go\\.mod\\'" . go-mod-ts-mode)''
+        ];
       };
     };
   };

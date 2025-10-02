@@ -134,6 +134,7 @@
           (setq treesit-language-source-alist
                 '((haskell "https://github.com/tree-sitter/tree-sitter-haskell")
                   (go "https://github.com/tree-sitter/tree-sitter-go")
+                  (gomod "https://github.com/camdencheek/tree-sitter-go-mod")
                   (yaml "https://github.com/ikatyang/tree-sitter-yaml")
                   (scala "https://github.com/tree-sitter/tree-sitter-scala")))
 

@@ -44,7 +44,7 @@
     # Language server performance booster
     pkgs.emacs-lsp-booster
 
-    # Nix language server
+    # Language servers
     pkgs.nixd
     pkgs.yaml-language-server
 
