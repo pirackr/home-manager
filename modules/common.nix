@@ -37,9 +37,9 @@
     pkgs.kind
     pkgs.kubernetes-helm
 
-    pkgs.aspell
-    pkgs.aspellDicts.en
     pkgs.enchant
+    pkgs.hunspell
+    pkgs.hunspellDicts.en_US
 
     # Language server performance booster
     pkgs.emacs-lsp-booster

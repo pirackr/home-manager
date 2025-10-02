@@ -140,24 +140,24 @@
           (setq corfu-quit-at-boundary t)
           (setq corfu-quit-no-match t)
 
-          (defun hm/corfu-prog-mode ()
-            "Enable `corfu-mode' with manual triggering for programming buffers."
-            (corfu-mode 1))
+          ;; Enable corfu globally
+          (global-corfu-mode 1)
 
-          (add-hook 'prog-mode-hook #'hm/corfu-prog-mode)
-          (add-hook 'conf-mode-hook #'hm/corfu-prog-mode)
+          ;; Bind TAB to completion in all buffers
+          ;; (define-key global-map (kbd "TAB") #'completion-at-point)
 
           (defun hm/corfu-eglot-toggle ()
             "Enable aggressive Corfu auto completion only when Eglot manages the buffer."
-            (if eglot-managed-mode
-                (progn
-                  (corfu-mode 1)
-                  (setq-local corfu-auto t)
-                  (setq-local corfu-auto-prefix 1)
-                  (setq-local corfu-quit-no-match nil))
-              (setq-local corfu-auto nil)
-              (setq-local corfu-auto-prefix 2)
-              (setq-local corfu-quit-no-match t)))
+            (when (boundp 'eglot-managed-mode)
+              (if eglot-managed-mode
+                  (progn
+                    (corfu-mode 1)
+                    (setq-local corfu-auto t)
+                    (setq-local corfu-auto-prefix 1)
+                    (setq-local corfu-quit-no-match nil))
+                (setq-local corfu-auto nil)
+                (setq-local corfu-auto-prefix 2)
+                (setq-local corfu-quit-no-match t))))
 
           (with-eval-after-load 'eglot
             (add-hook 'eglot-managed-mode-hook #'hm/corfu-eglot-toggle))
@@ -182,7 +182,7 @@
 
       # Corfu terminal support
       corfu-terminal = {
-        enable = false;
+        enable =  false;
         package = epkgs: epkgs.corfu-terminal;
         after = [ "corfu" ];
         config = ''

@@ -211,10 +211,10 @@ in
           new_status = "master";
         };
 
-        # Gestures Settings
-        gestures = {
-          workspace_swipe = true;
-        };
+        # Gestures Settings (Hyprland 0.51+ syntax)
+        gesture = [
+          "3, horizontal, workspace"
+        ];
 
         # Misc Settings
         misc = {
