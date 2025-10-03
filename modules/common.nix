@@ -289,6 +289,11 @@
     enable = true;
   };
 
+  # Configure Nix experimental features via user config file
+  home.file.".config/nix/nix.conf".text = ''
+    experimental-features = nix-command flakes
+  '';
+
   # Enable Emacs daemon service
   services.emacs = {
     enable = true;
