@@ -1,5 +1,15 @@
 { config, pkgs, lib, ... }:
 
+let
+  # Local helper to disable check phases when building packages
+  dontCheck = drv:
+    if lib.isDerivation drv then
+      drv.overrideAttrs (_: {
+        doCheck = false;
+        doInstallCheck = false;
+      })
+    else drv;
+in
 {
   imports = [
     ./git.nix
@@ -21,49 +31,55 @@
   home.stateVersion = "24.11"; # Please rea the comment before changing.
 
   # The home.packages option allows you to install Nix packages into your
-  # environment.
-  home.packages = [
-    pkgs.neofetch
-    pkgs.nix-prefetch-github
-    pkgs.nixpkgs-fmt
-    pkgs.curl
-    pkgs.wget
-    pkgs.less
-    pkgs.ripgrep
-    pkgs.htop
-    pkgs.claude-code
-    pkgs.codex
-    pkgs.openssh
-    pkgs.kind
-    pkgs.kubernetes-helm
+  # environment. We wrap packages with `pkgs.dontCheck` to skip checkPhase tests
+  # during local builds.
+  home.packages =
+    (map dontCheck [
+      pkgs.neofetch
+      pkgs.nix-prefetch-github
+      pkgs.nixpkgs-fmt
+      pkgs.curl
+      pkgs.wget
+      pkgs.less
+      pkgs.ripgrep
+      pkgs.htop
+      pkgs.sccache
+      pkgs.claude-code
+      pkgs.codex
+      pkgs.openssh
+      pkgs.kind
+      pkgs.kubernetes-helm
 
-    pkgs.enchant
-    pkgs.hunspell
-    pkgs.hunspellDicts.en_US
+      pkgs.enchant
+      pkgs.hunspell
+      pkgs.hunspellDicts.en_US
 
-    # Language server performance booster
-    pkgs.emacs-lsp-booster
+      # Language server performance booster
+      pkgs.emacs-lsp-booster
 
-    # Language servers
-    pkgs.nixd
-    pkgs.yaml-language-server
+      # Language servers
+      pkgs.nixd
+      pkgs.yaml-language-server
 
-    # Fonts
-    pkgs.noto-fonts
-    pkgs.noto-fonts-cjk-sans
-    pkgs.noto-fonts-emoji # Emoji support
-    pkgs.noto-fonts-extra
-    pkgs.nerd-fonts.fira-code
-    pkgs.font-awesome # FontAwesome icons
+      # Fonts
+      pkgs.noto-fonts
+      pkgs.noto-fonts-cjk-sans
+      pkgs.noto-fonts-emoji # Emoji support
+      pkgs.noto-fonts-extra
+      pkgs.nerd-fonts.fira-code
+      pkgs.font-awesome # FontAwesome icons
 
-    pkgs.nodejs
-    pkgs.uv
-  ] ++ lib.optionals pkgs.stdenv.isLinux [
-    pkgs.firefox
-    pkgs.pcmanfm
-    pkgs.pwvucontrol
-    pkgs.lm_sensors
-  ];
+      pkgs.nodejs
+      pkgs.uv
+      pkgs.awscli2
+    ])
+    ++ lib.optionals pkgs.stdenv.isLinux (map dontCheck [
+      pkgs.deskflow
+      pkgs.firefox
+      pkgs.pcmanfm
+      pkgs.pwvucontrol
+      pkgs.lm_sensors
+    ]);
 
   # Font configuration for proper emoji support
   # NOTE: fontconfig should be installed as systemPackages in NixOS configuration:
@@ -105,12 +121,30 @@
   home.sessionVariables = {
     # EDITOR is now set by vim module
     EDITOR = "vim";
+    # sccache for Rust builds
+    RUSTC_WRAPPER = "${pkgs.sccache}/bin/sccache";
+    SCCACHE_DIR = "${config.home.homeDirectory}/.cache/sccache";
+    SCCACHE_CACHE_SIZE = "20G";
   };
 
   # Enable direnv for automatic environment loading
   programs.direnv = {
     enable = true;
     nix-direnv.enable = true;
+  };
+
+  # Start sccache server automatically on Linux (optional convenience)
+  systemd.user.services.sccache = lib.mkIf pkgs.stdenv.isLinux {
+    Unit = {
+      Description = "sccache server";
+      After = [ "network.target" ];
+    };
+    Service = {
+      ExecStart = "${pkgs.sccache}/bin/sccache --start-server";
+      ExecStop = "${pkgs.sccache}/bin/sccache --stop-server";
+      Restart = "on-failure";
+    };
+    Install = { WantedBy = [ "default.target" ]; };
   };
 
   # Configure tmux
@@ -291,7 +325,14 @@
 
   # Configure Nix experimental features via user config file
   home.file.".config/nix/nix.conf".text = ''
+    # Enable modern CLI features
     experimental-features = nix-command flakes
+
+    # Parallelism settings
+    # Number of concurrent builds; use 'auto' for CPU count
+    max-jobs = auto
+    # CPU cores per build; 0 means use all available
+    cores = 0
   '';
 
   # Enable Emacs daemon service
