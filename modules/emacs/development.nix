@@ -15,15 +15,19 @@
       # Language Server Protocol client
       eglot = {
         enable = true;
-        package = epkgs: epkgs.eglot;
+        # Use builtin Eglot from Emacs to avoid ELPA conflicts
+        package = epkgs: epkgs.emacs;
         hook = [
           "(haskell-ts-mode . eglot-ensure)"
           "(nix-mode . eglot-ensure)"
           "(go-ts-mode . eglot-ensure)"
+          "(scala-ts-mode . eglot-ensure)"
         ];
         config = ''
           ;; Configure eglot server programs
           (add-to-list 'eglot-server-programs '(scala-ts-mode . ("metals")))
+          ;; Also support classic scala-mode if tree-sitter mode is unavailable
+          (add-to-list 'eglot-server-programs '(scala-mode . ("metals")))
           (add-to-list 'eglot-server-programs '(python-mode . ("basedpyright" "--langserver")))
           (add-to-list 'eglot-server-programs '(nix-mode . ("nixd")))
           (add-to-list 'eglot-server-programs '(terraform-mode . ("terraform-ls" "serve")))

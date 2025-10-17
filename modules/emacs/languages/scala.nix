@@ -2,12 +2,38 @@
 
 {
   config = lib.mkIf config.modules.emacs.enable {
+    # Provide Scala toolchain on PATH for Eglot/Metals and formatting
+    home.packages = with pkgs; [
+      metals
+      sbt
+      jdk
+      scalafmt
+    ];
+
     programs.emacs.init.usePackage = {
-      # Language modes - using built-in treesit modes
+      # Tree-sitter based Scala major mode
       scala-ts-mode = {
         enable = true;
-        package = epkgs: epkgs.emacs; # Built-in in Emacs 29+
-        mode = [ "\\.scala\\'" ];
+        # Prefer epkgs.scala-ts-mode; fall back to scala-mode if not present
+        package = epkgs: (epkgs.scala-ts-mode or epkgs.scala-mode);
+        mode = [
+          "\\.scala\\'"
+          "\\.sbt\\'"
+          "\\.sc\\'"  # Ammonite scripts
+        ];
+        init = ''
+          ;; Ensure scala-ts-mode is used; fallback to scala-mode if not present
+          (if (fboundp 'scala-ts-mode)
+              (progn
+                (add-to-list 'auto-mode-alist '("\\.scala\\'" . scala-ts-mode))
+                (add-to-list 'auto-mode-alist '("\\.sbt\\'" . scala-ts-mode))
+                (add-to-list 'auto-mode-alist '("\\.sc\\'" . scala-ts-mode)))
+            (progn
+              (add-to-list 'auto-mode-alist '("\\.scala\\'" . scala-mode))
+              (add-to-list 'auto-mode-alist '("\\.sbt\\'" . scala-mode))
+              (add-to-list 'auto-mode-alist '("\\.sc\\'" . scala-mode))
+              (add-hook 'scala-mode-hook #'eglot-ensure)))
+        '';
         hook = [
           "(scala-ts-mode . eglot-ensure)"
         ];
