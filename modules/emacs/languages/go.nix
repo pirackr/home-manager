@@ -10,6 +10,13 @@
         mode = [
           ''("\\.go\\'" . go-ts-mode)''
         ];
+        hook = [
+          ''(go-ts-mode . (lambda ()
+                             ;; Go uses tabs with an 8-space width; align editor indent accordingly.
+                             (setq-local indent-tabs-mode t)
+                             (setq-local tab-width 8)
+                             (setq-local go-ts-mode-indent-offset 8)))''
+        ];
       };
 
       # Go module support

@@ -64,14 +64,14 @@ in
       # Fonts
       pkgs.noto-fonts
       pkgs.noto-fonts-cjk-sans
-      pkgs.noto-fonts-emoji # Emoji support
-      pkgs.noto-fonts-extra
+      pkgs.noto-fonts-color-emoji
       pkgs.nerd-fonts.fira-code
       pkgs.font-awesome # FontAwesome icons
 
       pkgs.nodejs
       pkgs.uv
       pkgs.awscli2
+      pkgs.cookiecutter
     ])
     ++ lib.optionals pkgs.stdenv.isLinux (map dontCheck [
       pkgs.deskflow
