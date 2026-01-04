@@ -111,12 +111,13 @@
           (setq evil-want-C-i-jump nil)
 
           (setq org-todo-keywords '
-                ((sequence "TODO(t)" "WIP(w)" "BLOCK(b)"
+                ((sequence "TODO(t)" "PROJ(p)" "WIP(w)" "BLOCK(b)"
                            "|"
                            "DONE(d/!)" "KILL(k/!)")))
 
           (setq org-todo-keyword-faces
             '(("TODO" . (:foreground "#ff39a3" :weight bold))
+             ("PROJ" . "#56CB7D")
              ("WIP" . "#E35DBF")
              ("KILL" . (:foreground "white" :background "#4d4d4d" :weight bold))
              ("DONE" . "#008080")))
@@ -135,9 +136,11 @@
                                                       (org-agenda-start-day "-0d")
                                                       (org-agenda-skip-deadline-prewarning-if-scheduled t))
                                                      )
+                                             (todo "PROJ"
+                                                   ((org-agenda-overriding-header "Projects")))
                                              (todo "WIP"
                                                    ((org-agenda-overriding-header "WIP")))
-                                             (agenda "SOON"
+                                            (agenda "SOON"
                                                      ((org-agenda-overriding-header "Next 5 days")
                                                       (org-agenda-start-day "+1d")
                                                       (org-agenda-span 5)
