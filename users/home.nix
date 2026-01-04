@@ -20,9 +20,9 @@
   };
 
   # Example: User-specific git configuration
-  programs.git = {
-    userName = lib.mkForce "pirackr";
-    userEmail = lib.mkForce "pirackr.inbox@gmail.com";  # Replace with actual email
+  programs.git.settings.user = {
+      name = lib.mkForce "pirackr";
+      email = lib.mkForce "pirackr.inbox@gmail.com";  # Replace with actual email
   };
 
   # trace: warning: xdg-desktop-portal 1.18 reworked how portal implementations are loaded, you

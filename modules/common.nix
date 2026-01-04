@@ -44,11 +44,10 @@ in
       pkgs.ripgrep
       pkgs.htop
       pkgs.sccache
-      pkgs.claude-code
-      pkgs.codex
       pkgs.openssh
       pkgs.kind
       pkgs.kubernetes-helm
+      pkgs.jq
 
       pkgs.enchant
       pkgs.hunspell
@@ -74,11 +73,11 @@ in
       pkgs.cookiecutter
     ])
     ++ lib.optionals pkgs.stdenv.isLinux (map dontCheck [
-      pkgs.deskflow
       pkgs.firefox
       pkgs.pcmanfm
       pkgs.pwvucontrol
       pkgs.lm_sensors
+      pkgs.wallutils
     ]);
 
   # Font configuration for proper emoji support

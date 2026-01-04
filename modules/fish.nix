@@ -15,6 +15,8 @@
       shellAliases = {
         gemini = "npx https://github.com/google-gemini/gemini-cli";
         ccusage = "npx ccusage";
+        claude = "npx @anthropic-ai/claude-code";
+        codex = "npx  @openai/codex";
       };
       interactiveShellInit = ''
         set fish_greeting # Disable greeting

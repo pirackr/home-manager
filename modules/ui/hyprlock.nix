@@ -128,10 +128,8 @@
     '';
 
     xdg.configFile."hypr/hyprpaper.conf".text = ''
-      preload = ~/wallpapers/pugs.jpg
-      wallpaper = HDMI-A-1, ~/wallpapers/pugs.jpg
       splash = false
-      ipc = off
+      ipc = on 
     '';
   };
 }
