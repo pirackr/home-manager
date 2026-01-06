@@ -71,6 +71,7 @@ in
       pkgs.uv
       pkgs.awscli2
       pkgs.cookiecutter
+      pkgs.cloudflared
     ])
     ++ lib.optionals pkgs.stdenv.isLinux (map dontCheck [
       pkgs.firefox
