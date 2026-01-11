@@ -121,10 +121,10 @@
              ("WIP" . "#E35DBF")
              ("KILL" . (:foreground "white" :background "#4d4d4d" :weight bold))
              ("DONE" . "#008080")))
-          (setq org-directory "/ssh:ssh.pirackr.xyz:org/")
+          (setq org-directory "/ssh:org.pirackr.xyz:org/")
           (setq org-agenda-files (list org-directory))
           (setq org-refile-targets '((org-agenda-files :maxlevel . 2)))
-          (setq org-roam-directory "/ssh:ssh.pirackr.xyz:org/notes")
+          (setq org-roam-directory "/ssh:org.pirackr.xyz:org/notes")
 
           (setq org-outline-path-complete-in-steps nil)         ; Refile in a single go
           (setq org-refile-use-outline-path t)
