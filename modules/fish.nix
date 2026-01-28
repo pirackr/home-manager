@@ -17,6 +17,8 @@
         ccusage = "npx ccusage";
         claude = "npx @anthropic-ai/claude-code";
         codex = "npx  @openai/codex";
+        opencode = "npx  opencode-ai";
+        openspec = "npx @fission-ai/openspec";
       };
       interactiveShellInit = ''
         set fish_greeting # Disable greeting

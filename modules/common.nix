@@ -73,6 +73,12 @@ in
       pkgs.cookiecutter
       pkgs.cloudflared
       pkgs.doppler
+      pkgs.texlive.combined.scheme-full 
+      pkgs.prometheus.cli
+      pkgs.azure-cli 
+
+      pkgs.gh
+      pkgs.git-crypt
     ])
     ++ lib.optionals pkgs.stdenv.isLinux (map dontCheck [
       pkgs.firefox
@@ -242,6 +248,10 @@ in
       # Tab settings
       tab_bar_edge = "bottom";
       tab_bar_style = "powerline";
+
+      # macOS Option key configuration for Emacs keybindings
+      # Makes Option keys send Alt/Meta sequences instead of special characters
+      macos_option_as_alt = "yes";
 
       # Catppuccin Frappe theme
       background_opacity = "0.95";
