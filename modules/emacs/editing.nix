@@ -111,7 +111,7 @@
           (setq evil-want-C-i-jump nil)
 
           (setq org-todo-keywords '
-                ((sequence "TODO(t)" "PROJ(p)" "WIP(w)" "BLOCK(b)"
+                ((sequence "TODO(t)" "PROJ(p)" "WIP(w)" "WAIT(a)" "BLOCK(b)"
                            "|"
                            "DONE(d/!)" "KILL(k/!)")))
 
@@ -119,12 +119,13 @@
             '(("TODO" . (:foreground "#ff39a3" :weight bold))
              ("PROJ" . "#56CB7D")
              ("WIP" . "#E35DBF")
+             ("WAIT" . "#FFAA00")
              ("KILL" . (:foreground "white" :background "#4d4d4d" :weight bold))
              ("DONE" . "#008080")))
           (setq org-directory "/ssh:org.pirackr.xyz:/data/org/")
           (setq org-agenda-files (list org-directory))
           (setq org-refile-targets '((org-agenda-files :maxlevel . 2)))
-          (setq org-roam-directory "/ssh:org.pirackr.xyz:/data/org/notes")
+          (setq org-roam-directory "/ssh:org.pirackr.xyz:/data/org-roam")
 
           (setq org-outline-path-complete-in-steps nil)         ; Refile in a single go
           (setq org-refile-use-outline-path t)
