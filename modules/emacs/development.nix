@@ -98,18 +98,6 @@
         '';
       };
 
-      # AI-powered shell assistance in Emacs
-      agent-shell = {
-        enable = true;
-        package = epkgs: epkgs.agent-shell;
-        defer = true;
-        command = [ "agent-shell" "agent-shell-mode" ];
-        config = ''
-          ;; Configure agent-shell
-          (setq agent-shell-api-key (getenv "ANTHROPIC_API_KEY"))
-        '';
-      };
-
       # Language-specific configurations are now in separate modules
       # See languages/ directory for individual language setups
     };
