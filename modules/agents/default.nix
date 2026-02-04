@@ -15,12 +15,16 @@ in
   };
 
   config = lib.mkIf config.modules.agents.enable {
-    # Link AGENTS.md and all skills
+    # Link AGENTS.md, settings.json, and all skills
     home.file = lib.mkMerge [
       {
         # Claude Code instructions (merged personal guidelines + project docs)
         ".claude/CLAUDE.md".source = config.lib.file.mkOutOfStoreSymlink
           "${agentsPath}/AGENTS.md";
+
+        # Claude Code settings
+        ".claude/settings.json".source = config.lib.file.mkOutOfStoreSymlink
+          "${agentsPath}/settings.json";
       }
       allSkillLinks
     ];
