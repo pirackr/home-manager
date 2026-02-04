@@ -2,10 +2,9 @@
 
 {
   config = lib.mkIf config.modules.emacs.enable {
-    # vterm requires cmake and libvterm to compile the module
+    # vterm requires cmake to compile its module
     home.packages = [
       pkgs.cmake
-      pkgs.libvterm
     ];
 
     programs.emacs.init.usePackage = {

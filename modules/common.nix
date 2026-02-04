@@ -167,6 +167,7 @@ in
 
     # Terminal settings
     terminal = "xterm-kitty";
+    shell = "${pkgs.fish}/bin/fish";
 
     # Additional configuration
     extraConfig = ''
