@@ -237,15 +237,7 @@ in
       disable_ligatures = "never";
 
       # Window settings
-      remember_window_size = false;
-      initial_window_width = 500;
-      initial_window_height = 300;
-
-      # Start in fullscreen mode
-      startup_session = "none";
-      hide_window_decorations = "titlebar-only";
-      # Note: kitty doesn't have a direct fullscreen option, but we can simulate it
-      # You can press Cmd+Ctrl+F (macOS) or F11 (Linux) to toggle fullscreen after startup
+      remember_window_size = true;
 
       # Tab settings
       tab_bar_edge = "bottom";
