@@ -10,6 +10,7 @@
     ./editing.nix
     ./development.nix
     ./themes.nix
+    ./vterm.nix
   ];
 
   options.modules.emacs = {
