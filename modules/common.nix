@@ -18,6 +18,8 @@ in
     ./emacs/default.nix
     ./k8s.nix
     ./fcitx.nix
+    ./scripts.nix
+    ./agents
     ./ui
   ];
 
