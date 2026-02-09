@@ -19,6 +19,7 @@
         codex = "npx  @openai/codex";
         opencode = "npx  opencode-ai";
         openspec = "npx @fission-ai/openspec";
+        e = "emacs -nw";
       };
       interactiveShellInit = ''
         set fish_greeting # Disable greeting
@@ -27,6 +28,9 @@
         if test -f /etc/profile.d/nix-daemon.fish
           source /etc/profile.d/nix-daemon.fish
         end
+      '' + lib.optionalString pkgs.stdenv.isDarwin ''
+        # Ensure homebrew bin comes first for FIDO2-enabled SSH on macOS
+        fish_add_path --prepend /opt/homebrew/bin
       '';
 
       plugins = [
