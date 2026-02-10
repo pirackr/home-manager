@@ -8,6 +8,8 @@ let
   scriptPackages = {
     quip2markdown = pkgs.writeScriptBin "quip2markdown"
       (builtins.readFile ./quip2markdown);
+    markdown2quip = pkgs.writeScriptBin "markdown2quip"
+      (builtins.readFile ./markdown2quip);
   };
 in
 {

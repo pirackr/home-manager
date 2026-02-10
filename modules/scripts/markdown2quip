@@ -1,0 +1,203 @@
+#!/usr/bin/env python3
+"""
+markdown2quip - Convert Markdown files to Quip documents
+
+Creates a new Quip document or updates an existing one from Markdown input.
+
+Usage:
+    export QUIP_TOKEN="your_token_here"
+    markdown2quip <markdown_file>
+    markdown2quip - (read from stdin)
+    markdown2quip <markdown_file> --thread-id <quip_url_or_id>
+
+    Or:
+    markdown2quip <markdown_file> --token <token>
+
+Examples:
+    markdown2quip doc.md
+    markdown2quip doc.md --title "My Document"
+    markdown2quip doc.md --thread-id https://quip.com/XYZ123
+    markdown2quip doc.md --folder-id FOLDER123
+    cat doc.md | markdown2quip -
+"""
+
+import argparse
+import json
+import os
+import re
+import sys
+import urllib.error
+import urllib.parse
+import urllib.request
+
+
+def extract_thread_id(url_or_id):
+    """Extract thread ID from URL or return as-is if already an ID"""
+    if 'quip.com' in url_or_id:
+        match = re.search(r'quip\.com/([a-zA-Z0-9]+)', url_or_id)
+        if match:
+            return match.group(1)
+    return url_or_id
+
+
+def read_markdown(source):
+    """Read markdown content from file path or stdin"""
+    if source == '-':
+        return sys.stdin.read()
+    try:
+        with open(source, 'r') as f:
+            return f.read()
+    except FileNotFoundError:
+        print(f"ERROR: File not found: {source}", file=sys.stderr)
+        sys.exit(1)
+    except IOError as e:
+        print(f"ERROR: Cannot read file: {e}", file=sys.stderr)
+        sys.exit(1)
+
+
+def extract_title(markdown):
+    """Extract title from first heading in markdown"""
+    match = re.match(r'^#\s+(.+)$', markdown, re.MULTILINE)
+    if match:
+        return match.group(1).strip()
+    return None
+
+
+def quip_api_request(endpoint, token, data=None):
+    """Make a request to the Quip API"""
+    url = f"https://platform.quip.com/2/{endpoint}"
+    headers = {
+        'Authorization': f'Bearer {token}',
+    }
+
+    if data is not None:
+        encoded = urllib.parse.urlencode(data).encode('utf-8')
+        req = urllib.request.Request(url, data=encoded, headers=headers)
+    else:
+        req = urllib.request.Request(url, headers=headers)
+
+    try:
+        with urllib.request.urlopen(req) as response:
+            return json.loads(response.read().decode('utf-8'))
+    except urllib.error.HTTPError as e:
+        if e.code == 401:
+            print("ERROR: Invalid or missing QUIP_TOKEN", file=sys.stderr)
+            print("\nTo get your personal access token:", file=sys.stderr)
+            print("1. Go to https://quip.com/dev/token", file=sys.stderr)
+            print("2. Generate a new token", file=sys.stderr)
+            print("3. Set it: export QUIP_TOKEN='your_token'", file=sys.stderr)
+        elif e.code == 404:
+            print(f"ERROR: Document not found", file=sys.stderr)
+        else:
+            print(f"ERROR: HTTP {e.code}", file=sys.stderr)
+            try:
+                error_body = e.read().decode('utf-8')
+                print(error_body, file=sys.stderr)
+            except:
+                pass
+        sys.exit(1)
+    except urllib.error.URLError as e:
+        print(f"ERROR: {e.reason}", file=sys.stderr)
+        sys.exit(1)
+
+
+def create_document(token, content, title=None, folder_id=None):
+    """Create a new Quip document"""
+    data = {
+        'content': content,
+        'format': 'markdown',
+    }
+    if title:
+        data['title'] = title
+    if folder_id:
+        data['member_ids'] = folder_id
+
+    return quip_api_request('threads/new', token, data)
+
+
+def update_document(token, thread_id, content):
+    """Update an existing Quip document"""
+    data = {
+        'thread_id': thread_id,
+        'content': content,
+        'format': 'markdown',
+        'location': 6,  # REPLACE (replaces entire document content)
+    }
+
+    return quip_api_request('threads/edit-document', token, data)
+
+
+def get_document_url(response):
+    """Extract the document URL from a Quip API response"""
+    thread = response.get('thread', response)
+    link = thread.get('link', '')
+    if link:
+        return link
+    thread_id = thread.get('id', '')
+    if thread_id:
+        return f"https://quip.com/{thread_id}"
+    return None
+
+
+def main():
+    parser = argparse.ArgumentParser(
+        description='Convert Markdown files to Quip documents',
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+    export QUIP_TOKEN="your_token"
+    markdown2quip doc.md
+    markdown2quip doc.md --title "My Document"
+    markdown2quip doc.md --thread-id https://quip.com/XYZ123
+    markdown2quip doc.md --folder-id FOLDER123
+    cat doc.md | markdown2quip -
+        """
+    )
+    parser.add_argument('file', help='Markdown file path (use - for stdin)')
+    parser.add_argument('--token', help='Quip API token (or use QUIP_TOKEN env var)')
+    parser.add_argument('--thread-id', help='Existing Quip thread URL or ID to update')
+    parser.add_argument('--folder-id', help='Folder ID to create the document in')
+    parser.add_argument('--title', help='Document title (defaults to first heading)')
+
+    args = parser.parse_args()
+
+    # Get token from argument or environment
+    token = args.token or os.environ.get('QUIP_TOKEN')
+
+    if not token:
+        print("ERROR: QUIP_TOKEN not found", file=sys.stderr)
+        print("\nProvide token via:", file=sys.stderr)
+        print("  1. Environment: export QUIP_TOKEN='your_token'", file=sys.stderr)
+        print("  2. Argument: markdown2quip <file> --token <token>", file=sys.stderr)
+        print("\nGet your token at: https://quip.com/dev/token", file=sys.stderr)
+        sys.exit(1)
+
+    # Read markdown content
+    content = read_markdown(args.file)
+
+    if not content.strip():
+        print("ERROR: Empty markdown content", file=sys.stderr)
+        sys.exit(1)
+
+    # Determine title
+    title = args.title or extract_title(content)
+
+    if args.thread_id:
+        # Update existing document
+        thread_id = extract_thread_id(args.thread_id)
+        response = update_document(token, thread_id, content)
+        url = get_document_url(response)
+        print(f"Updated: {url}", file=sys.stderr)
+    else:
+        # Create new document
+        response = create_document(token, content, title=title, folder_id=args.folder_id)
+        url = get_document_url(response)
+        print(f"Created: {url}", file=sys.stderr)
+
+    # Print URL to stdout for piping
+    if url:
+        print(url)
+
+
+if __name__ == '__main__':
+    main()
