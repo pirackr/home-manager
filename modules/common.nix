@@ -20,6 +20,7 @@ in
     ./fcitx.nix
     ./scripts
     ./agents
+    ./workspace
     ./ui
   ];
 

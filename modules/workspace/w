@@ -1,0 +1,357 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+usage() {
+  echo "Usage: w <command> [args]"
+  echo ""
+  echo "Commands:"
+  echo "  init                Initialize workspace"
+  echo "  override <path>     Override a file in a sub-project"
+  echo "  restore <path>      Restore an overridden file"
+  echo "  sync                Recreate all symlinks and git suppression"
+  echo "  clone-all           Clone all repos from repos file"
+  echo "  status              Show override status"
+  echo "  list                List all override files"
+  exit 1
+}
+
+[[ $# -lt 1 ]] && usage
+
+command="$1"
+shift
+
+# --- Helpers ---
+
+# Walk up from $PWD to find directory containing .workspace/
+# Sets: WORKSPACE_ROOT, OVERRIDES_DIR
+find_workspace_root() {
+  local search_dir="$PWD"
+  while [[ "$search_dir" != "/" ]]; do
+    if [[ -d "$search_dir/.workspace" ]]; then
+      WORKSPACE_ROOT="$search_dir"
+      OVERRIDES_DIR="$WORKSPACE_ROOT/.workspace/overrides"
+      return 0
+    fi
+    search_dir="$(dirname "$search_dir")"
+  done
+  echo "Error: not in a workspace. Run 'w init' first." >&2
+  return 1
+}
+
+# Walk path components to find first directory with .git/
+# Sets: SUBREPO_PATH, SUBREPO_DIR, FILE_IN_REPO
+find_subrepo_for_path() {
+  local rel_path="$1"
+  local check_path=""
+  local IFS_save="$IFS"
+  IFS='/' read -ra parts <<< "$rel_path"
+  IFS="$IFS_save"
+
+  for (( i=0; i<${#parts[@]}-1; i++ )); do
+    if [[ -z "$check_path" ]]; then
+      check_path="${parts[$i]}"
+    else
+      check_path="$check_path/${parts[$i]}"
+    fi
+    if [[ -d "$WORKSPACE_ROOT/$check_path/.git" ]]; then
+      SUBREPO_PATH="$check_path"
+      SUBREPO_DIR="$WORKSPACE_ROOT/$check_path"
+      FILE_IN_REPO="${rel_path#"$check_path"/}"
+      return 0
+    fi
+  done
+
+  echo "Error: no sub-repo found in path '$rel_path'" >&2
+  return 1
+}
+
+add_to_exclude() {
+  local repo_dir="$1"
+  local path="$2"
+  local exclude_file="$repo_dir/.git/info/exclude"
+  mkdir -p "$(dirname "$exclude_file")"
+  if ! grep -qxF "$path" "$exclude_file" 2>/dev/null; then
+    echo "$path" >> "$exclude_file"
+  fi
+}
+
+remove_from_exclude() {
+  local repo_dir="$1"
+  local path="$2"
+  local exclude_file="$repo_dir/.git/info/exclude"
+  [[ -f "$exclude_file" ]] || return 0
+  grep -vxF "$path" "$exclude_file" > "$exclude_file.tmp" || true
+  mv "$exclude_file.tmp" "$exclude_file"
+}
+
+# --- Commands ---
+
+cmd_init() {
+  mkdir -p "$PWD/.workspace/overrides"
+
+  if [[ ! -f "$PWD/.envrc" ]]; then
+    cat > "$PWD/.envrc" << 'ENVRC'
+PATH_add bin
+use nix
+w sync
+ENVRC
+  fi
+
+  echo "Initialized workspace at $PWD"
+}
+
+cmd_override() {
+  local file_path="${1:-}"
+  [[ -z "$file_path" ]] && { echo "Usage: w override <path/file>" >&2; return 1; }
+  [[ "$file_path" == /* ]] && { echo "Error: use relative paths" >&2; return 1; }
+  [[ "$file_path" == ../* ]] && { echo "Error: path must be within workspace" >&2; return 1; }
+
+  find_workspace_root
+  cd "$WORKSPACE_ROOT"
+
+  find_subrepo_for_path "$file_path"
+
+  local override_dir="$OVERRIDES_DIR/$SUBREPO_PATH"
+  local override_file="$override_dir/$FILE_IN_REPO"
+  local target_file="$WORKSPACE_ROOT/$file_path"
+
+  # Already overridden
+  if [[ -L "$target_file" ]]; then
+    echo "Already overridden: $file_path"
+    return 0
+  fi
+
+  mkdir -p "$(dirname "$override_file")"
+
+  if [[ ! -e "$target_file" ]]; then
+    # Case 1: New file
+    touch "$override_file"
+    local rel_link
+    rel_link="$(realpath --relative-to="$(dirname "$target_file")" "$override_file")"
+    ln -s "$rel_link" "$target_file"
+    add_to_exclude "$SUBREPO_DIR" "$FILE_IN_REPO"
+    echo "Override (new): $file_path"
+  else
+    local is_tracked=false
+    if git -C "$SUBREPO_DIR" ls-files --error-unmatch "$FILE_IN_REPO" >/dev/null 2>&1; then
+      is_tracked=true
+    fi
+
+    if [[ "$is_tracked" == false ]]; then
+      # Case 2: Untracked file
+      cp "$target_file" "$override_file.orig"
+      mv "$target_file" "$override_file"
+      local rel_link
+      rel_link="$(realpath --relative-to="$(dirname "$target_file")" "$override_file")"
+      ln -s "$rel_link" "$target_file"
+      add_to_exclude "$SUBREPO_DIR" "$FILE_IN_REPO"
+      echo "Override (untracked): $file_path"
+    else
+      # Case 3: Tracked file
+      cp "$target_file" "$override_file.orig"
+      mv "$target_file" "$override_file"
+      git -C "$SUBREPO_DIR" update-index --skip-worktree "$FILE_IN_REPO"
+      local rel_link
+      rel_link="$(realpath --relative-to="$(dirname "$target_file")" "$override_file")"
+      ln -s "$rel_link" "$target_file"
+      echo "Override (tracked): $file_path"
+    fi
+  fi
+}
+
+_pre_stow_cleanup() {
+  [[ -d "$OVERRIDES_DIR" ]] || return 0
+
+  while IFS= read -r -d '' rel_file; do
+    rel_file="${rel_file#./}"
+    [[ "$rel_file" == *.orig ]] && continue
+    local target="$WORKSPACE_ROOT/$rel_file"
+
+    # If a real file (not symlink) exists where stow wants to symlink, remove it
+    if [[ -e "$target" && ! -L "$target" ]]; then
+      rm "$target"
+    fi
+  done < <(cd "$OVERRIDES_DIR" && find . -type f -print0)
+}
+
+_sync_git_suppression() {
+  [[ -d "$OVERRIDES_DIR" ]] || return 0
+
+  while IFS= read -r -d '' rel_file; do
+    rel_file="${rel_file#./}"
+    [[ "$rel_file" == *.orig ]] && continue
+
+    if find_subrepo_for_path "$rel_file" 2>/dev/null; then
+      if git -C "$SUBREPO_DIR" ls-files --error-unmatch "$FILE_IN_REPO" >/dev/null 2>&1; then
+        # Tracked file: ensure skip-worktree is set
+        git -C "$SUBREPO_DIR" update-index --skip-worktree "$FILE_IN_REPO" 2>/dev/null || true
+      else
+        # Untracked/new file: ensure in .git/info/exclude
+        add_to_exclude "$SUBREPO_DIR" "$FILE_IN_REPO"
+      fi
+    fi
+  done < <(cd "$OVERRIDES_DIR" && find . -type f -print0)
+}
+
+cmd_sync() {
+  find_workspace_root
+  cd "$WORKSPACE_ROOT"
+
+  # Pre-stow: remove real files that would conflict with stow
+  _pre_stow_cleanup
+
+  # Use stow to create/recreate all symlinks
+  if [[ -d "$OVERRIDES_DIR" ]] && [[ -n "$(ls -A "$OVERRIDES_DIR" 2>/dev/null)" ]]; then
+    stow -R -d .workspace -t . --no-folding --ignore='\.orig$' overrides 2>/dev/null || true
+  fi
+
+  # Re-apply git suppression for all override files
+  _sync_git_suppression
+}
+
+cmd_restore() {
+  local file_path="${1:-}"
+  [[ -z "$file_path" ]] && { echo "Usage: w restore <path/file>" >&2; return 1; }
+
+  find_workspace_root
+  cd "$WORKSPACE_ROOT"
+
+  find_subrepo_for_path "$file_path"
+
+  local override_file="$OVERRIDES_DIR/$SUBREPO_PATH/$FILE_IN_REPO"
+  local target_file="$WORKSPACE_ROOT/$file_path"
+  local orig_file="$override_file.orig"
+
+  [[ -f "$override_file" ]] || { echo "Error: no override found for '$file_path'" >&2; return 1; }
+
+  # Remove symlink
+  [[ -L "$target_file" ]] && rm "$target_file"
+
+  # Check if this was a tracked file
+  local is_tracked=false
+  if git -C "$SUBREPO_DIR" ls-files --error-unmatch "$FILE_IN_REPO" >/dev/null 2>&1; then
+    is_tracked=true
+  fi
+
+  if [[ -f "$orig_file" ]]; then
+    # Restore from backup
+    mv "$orig_file" "$target_file"
+    if [[ "$is_tracked" == true ]]; then
+      git -C "$SUBREPO_DIR" update-index --no-skip-worktree "$FILE_IN_REPO"
+    fi
+  fi
+
+  # Clean up
+  remove_from_exclude "$SUBREPO_DIR" "$FILE_IN_REPO"
+  rm "$override_file"
+
+  # Clean up empty parent directories in overrides
+  local parent_dir
+  parent_dir="$(dirname "$override_file")"
+  while [[ "$parent_dir" != "$OVERRIDES_DIR" && -d "$parent_dir" ]]; do
+    rmdir "$parent_dir" 2>/dev/null || break
+    parent_dir="$(dirname "$parent_dir")"
+  done
+
+  echo "Restored: $file_path"
+}
+
+cmd_clone_all() {
+  find_workspace_root
+  cd "$WORKSPACE_ROOT"
+
+  local repos_file="$WORKSPACE_ROOT/repos"
+  [[ -f "$repos_file" ]] || { echo "Error: repos file not found at $repos_file" >&2; return 1; }
+
+  while IFS=' ' read -r path url; do
+    [[ -z "$path" || "$path" == \#* ]] && continue
+
+    if [[ -d "$WORKSPACE_ROOT/$path" ]]; then
+      echo "Skip (exists): $path"
+      continue
+    fi
+
+    echo "Cloning: $path from $url"
+    mkdir -p "$(dirname "$WORKSPACE_ROOT/$path")"
+    git clone "$url" "$WORKSPACE_ROOT/$path"
+
+    add_to_exclude "$WORKSPACE_ROOT" "$path"
+  done < "$repos_file"
+}
+
+cmd_list() {
+  find_workspace_root
+
+  if [[ ! -d "$OVERRIDES_DIR" ]]; then
+    echo "No overrides"
+    return 0
+  fi
+
+  local found=false
+  while IFS= read -r -d '' rel_file; do
+    rel_file="${rel_file#./}"
+    [[ "$rel_file" == *.orig ]] && continue
+    echo "  $rel_file"
+    found=true
+  done < <(cd "$OVERRIDES_DIR" && find . -type f -print0 2>/dev/null)
+
+  if [[ "$found" == false ]]; then
+    echo "No overrides"
+  fi
+}
+
+cmd_status() {
+  find_workspace_root
+  cd "$WORKSPACE_ROOT"
+
+  [[ -d "$OVERRIDES_DIR" ]] || { echo "No overrides configured"; return 0; }
+
+  echo "Override status:"
+
+  while IFS= read -r -d '' rel_file; do
+    rel_file="${rel_file#./}"
+    [[ "$rel_file" == *.orig ]] && continue
+
+    local target="$WORKSPACE_ROOT/$rel_file"
+    local override="$OVERRIDES_DIR/$rel_file"
+
+    if [[ -L "$target" ]]; then
+      if [[ "$(realpath "$target" 2>/dev/null)" == "$(realpath "$override" 2>/dev/null)" ]]; then
+        echo "  active   $rel_file"
+      else
+        echo "  stale    $rel_file"
+      fi
+    elif [[ -e "$target" ]]; then
+      echo "  conflict $rel_file"
+    else
+      echo "  missing  $rel_file"
+    fi
+
+    # Check for upstream changes on tracked files
+    if find_subrepo_for_path "$rel_file" 2>/dev/null; then
+      if git -C "$SUBREPO_DIR" ls-files --error-unmatch "$FILE_IN_REPO" >/dev/null 2>&1; then
+        local orig_file="$override.orig"
+        if [[ -f "$orig_file" ]]; then
+          local head_content orig_content
+          head_content="$(git -C "$SUBREPO_DIR" show "HEAD:$FILE_IN_REPO" 2>/dev/null)" || true
+          orig_content="$(cat "$orig_file")"
+          if [[ -n "$head_content" && "$head_content" != "$orig_content" ]]; then
+            echo "    WARNING: upstream changed this file since override"
+          fi
+        fi
+      fi
+    fi
+  done < <(cd "$OVERRIDES_DIR" && find . -type f -print0 2>/dev/null)
+}
+
+case "$command" in
+  init) cmd_init ;;
+  override) cmd_override "$@" ;;
+  restore) cmd_restore "$@" ;;
+  sync) cmd_sync ;;
+  clone-all) cmd_clone_all ;;
+  list) cmd_list ;;
+  status) cmd_status ;;
+  -h|--help) usage ;;
+  *) echo "Unknown command: $command"; usage ;;
+esac
