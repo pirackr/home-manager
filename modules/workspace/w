@@ -5,20 +5,33 @@ usage() {
   echo "Usage: w <command> [args]"
   echo ""
   echo "Commands:"
-  echo "  init                Initialize workspace"
+  echo "  init                Initialize workspace (overrides, shared, aliases)"
   echo "  override <path>     Override a file in a sub-project"
   echo "  restore <path>      Restore an overridden file"
-  echo "  sync                Recreate all symlinks and git suppression"
+  echo "  sync                Recreate all symlinks (overrides, shared, aliases)"
   echo "  clone-all           Clone all repos from repos file"
-  echo "  status              Show override status"
-  echo "  list                List all override files"
+  echo "  status              Show override, shared, and alias status"
+  echo "  list                List overrides, shared files, and aliases"
+  echo ""
+  echo "Workspace layout:"
+  echo "  .workspace/overrides/   Per-subrepo file overrides"
+  echo "  .workspace/shared/      Files broadcast to all subrepos"
+  echo "  .workspace/aliases      Path mappings (source target per line)"
   exit 1
 }
 
-[[ $# -lt 1 ]] && usage
+# Allow sourcing for tests: `source w --source-only`
+if [[ "${1:-}" == "--source-only" ]]; then
+  _W_SOURCE_ONLY=true
+else
+  _W_SOURCE_ONLY=false
+fi
 
-command="$1"
-shift
+if [[ "$_W_SOURCE_ONLY" == false ]]; then
+  [[ $# -lt 1 ]] && usage
+  command="$1"
+  shift
+fi
 
 # --- Helpers ---
 
@@ -84,10 +97,32 @@ remove_from_exclude() {
   mv "$exclude_file.tmp" "$exclude_file"
 }
 
+# Populate SUBREPOS array with paths relative to WORKSPACE_ROOT.
+# Uses repos file if present, otherwise find-based fallback.
+list_subrepos() {
+  SUBREPOS=()
+  if [[ -f "$WORKSPACE_ROOT/repos" ]]; then
+    while IFS=' ' read -r path _url; do
+      [[ -z "$path" || "$path" == \#* ]] && continue
+      if [[ -d "$WORKSPACE_ROOT/$path/.git" ]]; then
+        SUBREPOS+=("$path")
+      fi
+    done < "$WORKSPACE_ROOT/repos"
+  else
+    while IFS= read -r -d '' gitdir; do
+      local repo_path
+      repo_path="$(dirname "$gitdir")"
+      repo_path="${repo_path#./}"
+      SUBREPOS+=("$repo_path")
+    done < <(cd "$WORKSPACE_ROOT" && find . -maxdepth 3 -name .git -type d -print0 | sort -z)
+  fi
+}
+
 # --- Commands ---
 
 cmd_init() {
   mkdir -p "$PWD/.workspace/overrides"
+  mkdir -p "$PWD/.workspace/shared"
 
   if [[ ! -f "$PWD/.envrc" ]]; then
     cat > "$PWD/.envrc" << 'ENVRC'
@@ -193,9 +228,129 @@ _sync_git_suppression() {
   done < <(cd "$OVERRIDES_DIR" && find . -type f -print0)
 }
 
+_pre_shared_cleanup() {
+  local shared_dir="$WORKSPACE_ROOT/.workspace/shared"
+  [[ -d "$shared_dir" ]] || return 0
+
+  for subrepo in "${SUBREPOS[@]}"; do
+    while IFS= read -r -d '' rel_file; do
+      rel_file="${rel_file#./}"
+      local target="$WORKSPACE_ROOT/$subrepo/$rel_file"
+      # If a real file (not symlink) exists where stow wants to symlink, remove it
+      if [[ -e "$target" && ! -L "$target" ]]; then
+        rm "$target"
+      fi
+    done < <(cd "$shared_dir" && find . -type f -print0)
+  done
+}
+
+_sync_shared() {
+  local shared_dir="$WORKSPACE_ROOT/.workspace/shared"
+  [[ -d "$shared_dir" ]] || return 0
+  [[ -n "$(ls -A "$shared_dir" 2>/dev/null)" ]] || return 0
+
+  for subrepo in "${SUBREPOS[@]}"; do
+    stow -R -d .workspace -t "$subrepo" --no-folding --ignore='\.orig$' shared 2>/dev/null || true
+  done
+}
+
+_sync_shared_git_suppression() {
+  local shared_dir="$WORKSPACE_ROOT/.workspace/shared"
+  [[ -d "$shared_dir" ]] || return 0
+
+  for subrepo in "${SUBREPOS[@]}"; do
+    local subrepo_dir="$WORKSPACE_ROOT/$subrepo"
+    while IFS= read -r -d '' rel_file; do
+      rel_file="${rel_file#./}"
+      add_to_exclude "$subrepo_dir" "$rel_file"
+    done < <(cd "$shared_dir" && find . -type f -print0)
+  done
+}
+
+_clean_stale_aliases() {
+  local state_file="$WORKSPACE_ROOT/.workspace/.state/aliases"
+  [[ -f "$state_file" ]] || return 0
+
+  local aliases_file="$WORKSPACE_ROOT/.workspace/aliases"
+
+  while IFS=' ' read -r source target; do
+    [[ -z "$source" || "$source" == \#* ]] && continue
+    [[ -z "$target" ]] && continue
+
+    # Check if this alias still exists in current aliases file
+    if [[ -f "$aliases_file" ]] && grep -qxF "$source $target" "$aliases_file" 2>/dev/null; then
+      continue
+    fi
+
+    # Remove stale alias from all subrepos
+    for subrepo in "${SUBREPOS[@]}"; do
+      local target_path="$WORKSPACE_ROOT/$subrepo/$target"
+      if [[ -L "$target_path" ]]; then
+        rm -f "$target_path"
+        # Clean empty parent dirs
+        local parent_dir
+        parent_dir="$(dirname "$target_path")"
+        while [[ "$parent_dir" != "$WORKSPACE_ROOT/$subrepo" && -d "$parent_dir" ]]; do
+          rmdir "$parent_dir" 2>/dev/null || break
+          parent_dir="$(dirname "$parent_dir")"
+        done
+      fi
+      remove_from_exclude "$WORKSPACE_ROOT/$subrepo" "$target"
+    done
+  done < "$state_file"
+}
+
+_save_alias_state() {
+  local aliases_file="$WORKSPACE_ROOT/.workspace/aliases"
+  local state_dir="$WORKSPACE_ROOT/.workspace/.state"
+  mkdir -p "$state_dir"
+
+  if [[ -f "$aliases_file" ]]; then
+    cp "$aliases_file" "$state_dir/aliases"
+  else
+    rm -f "$state_dir/aliases"
+  fi
+}
+
+_sync_aliases() {
+  local aliases_file="$WORKSPACE_ROOT/.workspace/aliases"
+  [[ -f "$aliases_file" ]] || return 0
+
+  for subrepo in "${SUBREPOS[@]}"; do
+    local subrepo_dir="$WORKSPACE_ROOT/$subrepo"
+    while IFS=' ' read -r source target; do
+      [[ -z "$source" || "$source" == \#* ]] && continue
+      [[ -z "$target" ]] && continue
+
+      local source_path="$subrepo_dir/$source"
+      local target_path="$subrepo_dir/$target"
+
+      # Skip if source doesn't exist in subrepo
+      [[ -e "$source_path" ]] || continue
+
+      # Create parent directory for target
+      mkdir -p "$(dirname "$target_path")"
+
+      # Remove existing target (stale symlink or real file)
+      if [[ -L "$target_path" || -e "$target_path" ]]; then
+        rm -rf "$target_path"
+      fi
+
+      # Create relative symlink
+      local rel_link
+      rel_link="$(realpath --relative-to="$(dirname "$target_path")" "$source_path")"
+      ln -s "$rel_link" "$target_path"
+
+      # Suppress in git
+      add_to_exclude "$subrepo_dir" "$target"
+    done < "$aliases_file"
+  done
+}
+
 cmd_sync() {
   find_workspace_root
   cd "$WORKSPACE_ROOT"
+  list_subrepos
 
   # Pre-stow: remove real files that would conflict with stow
   _pre_stow_cleanup
@@ -207,6 +362,16 @@ cmd_sync() {
 
   # Re-apply git suppression for all override files
   _sync_git_suppression
+
+  # Shared: broadcast to all subrepos
+  _pre_shared_cleanup
+  _sync_shared
+  _sync_shared_git_suppression
+
+  # Aliases: clean stale, apply current, save state
+  _clean_stale_aliases
+  _sync_aliases
+  _save_alias_state
 }
 
 cmd_restore() {
@@ -282,21 +447,52 @@ cmd_clone_all() {
 cmd_list() {
   find_workspace_root
 
-  if [[ ! -d "$OVERRIDES_DIR" ]]; then
-    echo "No overrides"
-    return 0
+  # Overrides
+  echo "Overrides:"
+  local found=false
+  if [[ -d "$OVERRIDES_DIR" ]]; then
+    while IFS= read -r -d '' rel_file; do
+      rel_file="${rel_file#./}"
+      [[ "$rel_file" == *.orig ]] && continue
+      echo "  $rel_file"
+      found=true
+    done < <(cd "$OVERRIDES_DIR" && find . -type f -print0 2>/dev/null)
+  fi
+  if [[ "$found" == false ]]; then
+    echo "  (none)"
   fi
 
-  local found=false
-  while IFS= read -r -d '' rel_file; do
-    rel_file="${rel_file#./}"
-    [[ "$rel_file" == *.orig ]] && continue
-    echo "  $rel_file"
-    found=true
-  done < <(cd "$OVERRIDES_DIR" && find . -type f -print0 2>/dev/null)
+  # Shared
+  echo ""
+  echo "Shared:"
+  local shared_dir="$WORKSPACE_ROOT/.workspace/shared"
+  local shared_found=false
+  if [[ -d "$shared_dir" ]]; then
+    while IFS= read -r -d '' rel_file; do
+      rel_file="${rel_file#./}"
+      echo "  $rel_file"
+      shared_found=true
+    done < <(cd "$shared_dir" && find . -type f -print0 2>/dev/null)
+  fi
+  if [[ "$shared_found" == false ]]; then
+    echo "  (none)"
+  fi
 
-  if [[ "$found" == false ]]; then
-    echo "No overrides"
+  # Aliases
+  echo ""
+  echo "Aliases:"
+  local aliases_file="$WORKSPACE_ROOT/.workspace/aliases"
+  local alias_found=false
+  if [[ -f "$aliases_file" ]]; then
+    while IFS=' ' read -r source target; do
+      [[ -z "$source" || "$source" == \#* ]] && continue
+      [[ -z "$target" ]] && continue
+      echo "  $source -> $target"
+      alias_found=true
+    done < "$aliases_file"
+  fi
+  if [[ "$alias_found" == false ]]; then
+    echo "  (none)"
   fi
 }
 
@@ -304,45 +500,102 @@ cmd_status() {
   find_workspace_root
   cd "$WORKSPACE_ROOT"
 
-  [[ -d "$OVERRIDES_DIR" ]] || { echo "No overrides configured"; return 0; }
-
+  # Override status
   echo "Override status:"
+  if [[ -d "$OVERRIDES_DIR" ]]; then
+    while IFS= read -r -d '' rel_file; do
+      rel_file="${rel_file#./}"
+      [[ "$rel_file" == *.orig ]] && continue
 
-  while IFS= read -r -d '' rel_file; do
-    rel_file="${rel_file#./}"
-    [[ "$rel_file" == *.orig ]] && continue
+      local target="$WORKSPACE_ROOT/$rel_file"
+      local override="$OVERRIDES_DIR/$rel_file"
 
-    local target="$WORKSPACE_ROOT/$rel_file"
-    local override="$OVERRIDES_DIR/$rel_file"
-
-    if [[ -L "$target" ]]; then
-      if [[ "$(realpath "$target" 2>/dev/null)" == "$(realpath "$override" 2>/dev/null)" ]]; then
-        echo "  active   $rel_file"
+      if [[ -L "$target" ]]; then
+        if [[ "$(realpath "$target" 2>/dev/null)" == "$(realpath "$override" 2>/dev/null)" ]]; then
+          echo "  active   $rel_file"
+        else
+          echo "  stale    $rel_file"
+        fi
+      elif [[ -e "$target" ]]; then
+        echo "  conflict $rel_file"
       else
-        echo "  stale    $rel_file"
+        echo "  missing  $rel_file"
       fi
-    elif [[ -e "$target" ]]; then
-      echo "  conflict $rel_file"
-    else
-      echo "  missing  $rel_file"
-    fi
 
-    # Check for upstream changes on tracked files
-    if find_subrepo_for_path "$rel_file" 2>/dev/null; then
-      if git -C "$SUBREPO_DIR" ls-files --error-unmatch "$FILE_IN_REPO" >/dev/null 2>&1; then
-        local orig_file="$override.orig"
-        if [[ -f "$orig_file" ]]; then
-          local head_content orig_content
-          head_content="$(git -C "$SUBREPO_DIR" show "HEAD:$FILE_IN_REPO" 2>/dev/null)" || true
-          orig_content="$(cat "$orig_file")"
-          if [[ -n "$head_content" && "$head_content" != "$orig_content" ]]; then
-            echo "    WARNING: upstream changed this file since override"
+      # Check for upstream changes on tracked files
+      if find_subrepo_for_path "$rel_file" 2>/dev/null; then
+        if git -C "$SUBREPO_DIR" ls-files --error-unmatch "$FILE_IN_REPO" >/dev/null 2>&1; then
+          local orig_file="$override.orig"
+          if [[ -f "$orig_file" ]]; then
+            local head_content orig_content
+            head_content="$(git -C "$SUBREPO_DIR" show "HEAD:$FILE_IN_REPO" 2>/dev/null)" || true
+            orig_content="$(cat "$orig_file")"
+            if [[ -n "$head_content" && "$head_content" != "$orig_content" ]]; then
+              echo "    WARNING: upstream changed this file since override"
+            fi
           fi
         fi
       fi
+    done < <(cd "$OVERRIDES_DIR" && find . -type f -print0 2>/dev/null)
+  else
+    echo "  (none)"
+  fi
+
+  # Shared status
+  echo ""
+  echo "Shared status:"
+  local shared_dir="$WORKSPACE_ROOT/.workspace/shared"
+  if [[ -d "$shared_dir" ]] && [[ -n "$(ls -A "$shared_dir" 2>/dev/null)" ]]; then
+    list_subrepos
+    while IFS= read -r -d '' rel_file; do
+      rel_file="${rel_file#./}"
+      for subrepo in "${SUBREPOS[@]}"; do
+        local target="$WORKSPACE_ROOT/$subrepo/$rel_file"
+        if [[ -L "$target" ]]; then
+          echo "  active   $subrepo/$rel_file"
+        elif [[ -e "$target" ]]; then
+          echo "  conflict $subrepo/$rel_file"
+        else
+          echo "  missing  $subrepo/$rel_file"
+        fi
+      done
+    done < <(cd "$shared_dir" && find . -type f -print0)
+  else
+    echo "  (none)"
+  fi
+
+  # Alias status
+  echo ""
+  echo "Alias status:"
+  local aliases_file="$WORKSPACE_ROOT/.workspace/aliases"
+  if [[ -f "$aliases_file" ]]; then
+    list_subrepos
+    local alias_found=false
+    while IFS=' ' read -r source target_name; do
+      [[ -z "$source" || "$source" == \#* ]] && continue
+      [[ -z "$target_name" ]] && continue
+      for subrepo in "${SUBREPOS[@]}"; do
+        local target_path="$WORKSPACE_ROOT/$subrepo/$target_name"
+        if [[ -L "$target_path" ]]; then
+          echo "  active   $subrepo/$target_name -> $source"
+        elif [[ -e "$target_path" ]]; then
+          echo "  conflict $subrepo/$target_name"
+        else
+          echo "  missing  $subrepo/$target_name"
+        fi
+        alias_found=true
+      done
+    done < "$aliases_file"
+    if [[ "$alias_found" == false ]]; then
+      echo "  (none)"
     fi
-  done < <(cd "$OVERRIDES_DIR" && find . -type f -print0 2>/dev/null)
+  else
+    echo "  (none)"
+  fi
 }
+
+[[ "$_W_SOURCE_ONLY" == true ]] && return 0 2>/dev/null || true
+[[ "$_W_SOURCE_ONLY" == true ]] && exit 0
 
 case "$command" in
   init) cmd_init ;;
