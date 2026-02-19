@@ -10,6 +10,15 @@ let
       (builtins.readFile ./quip2markdown);
     markdown2quip = pkgs.writeScriptBin "markdown2quip"
       (builtins.readFile ./markdown2quip);
+    splunk-query = pkgs.writeScriptBin "splunk-query"
+      (builtins.readFile ./splunk-query);
+    grafana-cli = pkgs.writeScriptBin "grafana-cli"
+      (builtins.readFile ./grafana-cli);
+    workspace = pkgs.writeShellApplication {
+      name = "workspace";
+      runtimeInputs = [ pkgs.stow pkgs.git pkgs.coreutils ];
+      text = builtins.readFile ./workspace;
+    };
   };
 in
 {
