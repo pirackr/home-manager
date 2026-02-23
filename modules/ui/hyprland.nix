@@ -87,6 +87,7 @@ in
       adwaita-icon-theme
       hyprpaper
       hyprlock
+      hyprmon
     ];
 
     # Enable hyprland
@@ -105,9 +106,6 @@ in
             name = epic-mouse-v1
             sensitivity = -0.5
         }
-
-        # Window rules v2
-        windowrulev2 = suppressevent maximize, class:.*
 
         # Volume and Media Control Binds (using wpctl for PipeWire)
         bind = , XF86AudioRaiseVolume, exec, wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%+
