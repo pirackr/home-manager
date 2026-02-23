@@ -7,12 +7,10 @@
   home.username = "pirackr";
   home.homeDirectory = "/home/pirackr";
 
-  # Example: User-specific packages
   home.packages = with pkgs; [
-    # Add user-specific packages here
-  ];
+  ] ++ [ nixgl.packages.x86_64-linux.nixGLDefault ];
 
-  nixGL.packages = nixgl.packages;
+  targets.genericLinux.nixGL.packages = nixgl.packages;
 
   programs.kitty = {
     package = (config.lib.nixGL.wrap pkgs.kitty);
