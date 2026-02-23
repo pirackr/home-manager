@@ -330,17 +330,16 @@ in
     enable = true;
   };
 
-  # Configure Nix experimental features via user config file
-  home.file.".config/nix/nix.conf".text = ''
-    # Enable modern CLI features
-    experimental-features = nix-command flakes
-
-    # Parallelism settings
-    # Number of concurrent builds; use 'auto' for CPU count
-    max-jobs = auto
-    # CPU cores per build; 0 means use all available
-    cores = 0
-  '';
+  nix = {
+    enable = true;
+    package = pkgs.nix;
+    settings = {
+      experimental-features = [ "nix-command" "flakes" ];
+      pure-eval = false;
+      max-jobs = "auto";
+      cores = 0;
+    };
+  };
 
   # Enable Emacs daemon service
   services.emacs = {
