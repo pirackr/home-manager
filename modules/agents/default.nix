@@ -56,6 +56,16 @@ let
       // lib.optionalAttrs (server.headers != { }) { headers = server.headers; }
       // lib.optionalAttrs (server.env != { }) { env = server.env; };
 
+  # Render a single MCP server to OpenCode format (explicit type, "http" -> "remote")
+  renderOpenCodeMcpServer = name: server:
+    if server.type == "stdio" then
+      { type = "stdio"; command = server.command; args = server.args; }
+      // lib.optionalAttrs (server.env != { }) { env = server.env; }
+    else
+      { type = if server.type == "http" then "remote" else server.type; url = server.url; }
+      // lib.optionalAttrs (server.headers != { }) { headers = server.headers; }
+      // lib.optionalAttrs (server.env != { }) { env = server.env; };
+
   # Filter MCP servers for a specific tool
   mcpServersFor = tool:
     lib.filterAttrs (_: server: builtins.elem tool server.enableFor) cfg.mcpServers;
@@ -64,6 +74,14 @@ let
   renderMcpJson = tool:
     let servers = mcpServersFor tool;
     in { mcpServers = lib.mapAttrs renderMcpServer servers; };
+
+  # Render OpenCode config with MCP servers and extra settings merged
+  renderOpenCodeConfig = let
+    servers = mcpServersFor "opencode";
+    mcpPart = lib.optionalAttrs (servers != { }) {
+      mcpServers = lib.mapAttrs renderOpenCodeMcpServer servers;
+    };
+  in cfg.opencode.settings // mcpPart;
 in
 {
   options.modules.agents = {
@@ -81,6 +99,15 @@ in
         type = lib.types.attrs;
         default = { };
         description = "Claude Code settings (model, env, plugins, statusLine, etc).";
+      };
+    };
+
+    opencode = {
+      enable = lib.mkEnableOption "OpenCode configuration";
+      settings = lib.mkOption {
+        type = lib.types.attrs;
+        default = { };
+        description = "OpenCode settings (providers, agents, shell, etc).";
       };
     };
   };
@@ -101,6 +128,13 @@ in
       # Claude Code settings
       (lib.mkIf cfg.claude.enable {
         ".claude/settings.json".text = builtins.toJSON cfg.claude.settings;
+      })
+
+      # OpenCode config + AGENTS.md
+      (lib.mkIf cfg.opencode.enable {
+        ".config/opencode/opencode.json".text = builtins.toJSON renderOpenCodeConfig;
+        ".config/opencode/AGENTS.md".source = config.lib.file.mkOutOfStoreSymlink
+          "${agentsPath}/AGENTS.md";
       })
     ];
   };
