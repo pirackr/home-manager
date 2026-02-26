@@ -82,6 +82,15 @@ let
       mcpServers = lib.mapAttrs renderOpenCodeMcpServer servers;
     };
   in cfg.opencode.settings // mcpPart;
+
+  # Render Codex MCP servers as TOML using pkgs.formats.toml
+  codexMcpServers = mcpServersFor "codex";
+  codexMcpTomlFile = (pkgs.formats.toml { }).generate "codex-mcp.toml" {
+    mcp_servers = lib.mapAttrs (name: server:
+      { command = server.command; args = server.args; }
+      // lib.optionalAttrs (server.env != { }) { env = server.env; }
+    ) codexMcpServers;
+  };
 in
 {
   options.modules.agents = {
@@ -110,6 +119,10 @@ in
         description = "OpenCode settings (providers, agents, shell, etc).";
       };
     };
+
+    codex = {
+      enable = lib.mkEnableOption "Codex CLI configuration";
+    };
   };
 
   config = lib.mkIf cfg.enable {
@@ -136,6 +149,34 @@ in
         ".config/opencode/AGENTS.md".source = config.lib.file.mkOutOfStoreSymlink
           "${agentsPath}/AGENTS.md";
       })
+
+      # Codex AGENTS.md
+      (lib.mkIf cfg.codex.enable {
+        ".codex/AGENTS.md".source = config.lib.file.mkOutOfStoreSymlink
+          "${agentsPath}/AGENTS.md";
+      })
     ];
+
+    # Codex: patch mcp_servers in config.toml via activation script
+    # (config.toml has runtime state like [projects.*] we must preserve)
+    home.activation.codexMcpServers = lib.mkIf (cfg.codex.enable && codexMcpServers != { }) (
+      lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+        CODEX_CONFIG="${config.home.homeDirectory}/.codex/config.toml"
+        if [ -f "$CODEX_CONFIG" ]; then
+          # Remove existing [mcp_servers.*] sections
+          ${pkgs.gawk}/bin/awk '
+            /^\[mcp_servers\./ { skip=1; next }
+            /^\[/ { skip=0 }
+            !skip { print }
+          ' "$CODEX_CONFIG" > "$CODEX_CONFIG.tmp"
+          # Append Nix-generated MCP servers
+          cat ${codexMcpTomlFile} >> "$CODEX_CONFIG.tmp"
+          mv "$CODEX_CONFIG.tmp" "$CODEX_CONFIG"
+        else
+          mkdir -p "$(dirname "$CODEX_CONFIG")"
+          cp ${codexMcpTomlFile} "$CODEX_CONFIG"
+        fi
+      ''
+    );
   };
 }
