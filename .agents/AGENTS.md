@@ -38,10 +38,11 @@ Run all tests:
 
 Run specific tests:
 ```bash
-./tests/test-build.sh     # Test configuration builds successfully
-./tests/test-vim.sh       # Test vim module
-./tests/test-emacs.sh     # Test emacs module
-./tests/test-k8s.sh       # Test Kubernetes tools
+./tests/test-build.sh       # Test configuration builds successfully
+./tests/test-vim.sh         # Test vim module
+./tests/test-emacs.sh       # Test emacs module
+./tests/test-k8s.sh         # Test Kubernetes tools
+./tests/test-workspace.sh   # Test workspace script
 ```
 
 ### Development Shell
@@ -91,19 +92,26 @@ modules = {
 - **k8s.nix**: Kubernetes tools (kubectl, k9s, etc.)
 - **fcitx.nix**: Input method configuration (Linux only)
 - **emacs/**: Emacs configuration split into focused modules
-  - `default.nix`: Main entry point with performance optimizations
+  - `default.nix`: Main entry point, imports all sub-modules, enables emacs daemon
+  - `emacs-init.nix`: Handles init.el generation
   - `core.nix`: Core functionality (dired, exec-path, super-save, undo-fu, tree-sitter, jinx, flymake, which-key)
   - `completion.nix`: Completion and search (vertico, consult, company, yasnippet, anzu, fzf)
   - `editing.nix`: Editing features (move-text, treemacs, magit, forge, diff-hl, org-mode, apheleia)
   - `development.nix`: Development tools (eglot, eglot-booster, dap-mode, language modes)
   - `themes.nix`: Visual themes (catppuccin, doom-modeline, nerd-icons)
+  - `evil.nix`: Vim keybindings (evil mode)
+  - `haskell.nix`: Haskell language support
+  - `vterm.nix`: Virtual terminal support
   - `languages/`: Language-specific configurations (nix, scala, python, go, terraform, yaml)
-  - `prelude.el`: Basic Emacs settings loaded from file
-- **agents/**: Claude Code integration
-  - `AGENTS.md`: Symlinked to ~/.claude/CLAUDE.md for project-specific AI instructions
-  - `skills/`: Directory for future Claude Code skills (currently unused)
+  - `prelude.el`: Basic Emacs settings loaded from file (straight.el bootstrap)
+- **agents/**: AI agent integration (Claude Code, OpenCode, Codex)
+  - `default.nix`: Unified MCP server config across agents, writes to `~/.mcp.json`, `~/.claude/settings.json`, `~/.config/opencode/opencode.json`, `~/.codex/config.toml`
+  - `AGENTS.md`: Symlinked to `~/.claude/CLAUDE.md` for project-specific AI instructions
 - **scripts/**: Utility scripts
   - `quip2markdown`: Convert Quip documents to markdown
+  - `markdown2quip`: Convert markdown back to Quip
+  - `splunk-query`: Query Splunk API
+  - `workspace`: Multi-repo workspace manager with stow and git
 - **ui/**: Linux desktop environment (Hyprland-based)
   - `hyprland.nix`: Hyprland window manager
   - `gtk.nix`: GTK theme with Catppuccin
@@ -125,6 +133,7 @@ Platform-specific packages are added conditionally:
 
 - **git-crypt**: Sensitive files are encrypted (configured in .gitattributes)
 - Currently encrypted: `users/work.nix` (contains API keys)
+- **SOPS**: Additional secrets in `secrets/` directory (`.sops.yaml` config at root)
 - Never commit unencrypted secrets or API keys
 
 ### Key Technologies
@@ -176,8 +185,20 @@ The home profile (Linux) uses:
 - systemd services for background tasks
 - xdg-portal configuration
 
+## Commit Convention
+
+This repo uses conventional commits: `type(scope): description`
+- Types: `feat`, `chore`, `fix`
+- Scope is the module name (e.g., `agent`, `scripts`, `emacs`)
+- Examples: `feat(agent): add support for codex`, `chore(scripts): remove grafana-cli`
+
 ## Nix Configuration
 
 User-level nix.conf is generated at ~/.config/nix/nix.conf with:
 - Experimental features: nix-command, flakes
 - Parallelism: max-jobs = auto, cores = 0 (use all available)
+
+## File Notes
+
+- `CLAUDE.md` at root is a symlink to `.agents/AGENTS.md`
+- No CI/CD pipeline; all testing is local via shell scripts in `tests/`
