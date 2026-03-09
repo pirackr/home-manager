@@ -10,9 +10,10 @@
     flake-utils.url = "github:numtide/flake-utils";
     nixgl.url   = "github:nix-community/nixGL";
     mac-app-util.url = "github:hraban/mac-app-util";
+    peon-ping.url = "github:PeonPing/peon-ping";
   };
 
-  outputs = { nixpkgs, home-manager, flake-utils, nixgl, mac-app-util, ... }:
+  outputs = { nixpkgs, home-manager, flake-utils, nixgl, mac-app-util, peon-ping, ... }:
     {
       homeConfigurations = {
         "pirackr@work" = home-manager.lib.homeManagerConfiguration {
@@ -22,9 +23,15 @@
               allowUnfree = true;
               allowUnfreePredicate = _: true;
             };
+            overlays = [
+              (final: prev: {
+                peon-ping = peon-ping.packages.aarch64-darwin.default;
+              })
+            ];
           };
           modules = [
             mac-app-util.homeManagerModules.default
+            peon-ping.homeManagerModules.default
             ./modules/common.nix
             ./users/work.nix
           ];

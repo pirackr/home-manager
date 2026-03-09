@@ -1,5 +1,12 @@
-# Encrypt sensitive user configuration files
-users/work.nix filter=git-crypt diff=git-crypt
+#    __                                                __
+#   |  |_  ______ ____    ____   ______ ___.__.______/  |_
+#   |   _\/  ___// ___\  /  _ \ /  ___<   |  |____ \   __\
+#   |  | |  |  \  \___  (  <_> )  |    \___  |  |_> >  |
+#   |__| |__|   \_____>  \____/|__|    / ____|   __/|__|
+#                                      \/    |__|
+#
+# The following files are encrypted by transcrypt.
+# Do not edit this section manually.
 
-# You can add other sensitive files here
-# secrets/* filter=git-crypt diff=git-crypt
+users/work.nix filter=crypt diff=crypt merge=crypt
+users/skills/** filter=crypt diff=crypt merge=crypt

@@ -20,6 +20,7 @@ in
     ./fcitx.nix
     ./scripts
     ./agents
+    ./rq-cli.nix
     ./ui
   ];
 

@@ -39,6 +39,11 @@ let
         default = { };
         description = "HTTP headers for SSE/HTTP MCP servers.";
       };
+      oauth = lib.mkOption {
+        type = lib.types.attrs;
+        default = { };
+        description = "OAuth configuration for remote MCP servers (e.g. clientId, callbackPort).";
+      };
       enableFor = lib.mkOption {
         type = lib.types.listOf (lib.types.enum [ "claude" "codex" "opencode" "cursor" ]);
         default = [ "claude" "codex" "opencode" "cursor" ];
@@ -46,6 +51,39 @@ let
       };
     };
   };
+
+  # Command/skill submodule type (shared across all AI tools)
+  commandType = lib.types.submodule {
+    options = {
+      description = lib.mkOption {
+        type = lib.types.str;
+        description = "Short description of the command/skill.";
+      };
+      file = lib.mkOption {
+        type = lib.types.path;
+        description = "Path to the markdown prompt file.";
+      };
+    };
+  };
+
+  # Prepend Codex YAML frontmatter to a command prompt
+  renderCodexPrompt = name: cmd:
+    ''
+      ---
+      description: "${cmd.description}"
+      argument-hint: ""
+      ---
+    '' + builtins.readFile cmd.file;
+
+  # Prepend OpenCode YAML frontmatter to a command prompt
+  renderOpenCodeSkill = name: cmd:
+    ''
+      ---
+      name: "${name}"
+      description: "${cmd.description}"
+      ---
+    '' + builtins.readFile cmd.file;
+
   # Render a single MCP server to the .mcp.json format (Claude/Cursor style)
   renderMcpServer = name: server:
     if server.type == "stdio" then
@@ -54,6 +92,7 @@ let
     else
       { type = server.type; url = server.url; }
       // lib.optionalAttrs (server.headers != { }) { headers = server.headers; }
+      // lib.optionalAttrs (server.oauth != { }) { oauth = server.oauth; }
       // lib.optionalAttrs (server.env != { }) { env = server.env; };
 
   # Render a single MCP server to OpenCode format (explicit type, "http" -> "remote")
@@ -102,12 +141,23 @@ in
       description = "Shared MCP server definitions across AI tools.";
     };
 
+    commands = lib.mkOption {
+      type = lib.types.attrsOf commandType;
+      default = { };
+      description = "Custom commands/skills deployed to all AI agents.";
+    };
+
     claude = {
       enable = lib.mkEnableOption "Claude Code configuration";
       settings = lib.mkOption {
         type = lib.types.attrs;
         default = { };
-        description = "Claude Code settings (model, env, plugins, statusLine, etc).";
+        description = "Claude Code settings (model, env, statusLine, etc).";
+      };
+      enabledPlugins = lib.mkOption {
+        type = lib.types.listOf lib.types.str;
+        default = [ ];
+        description = "List of Claude Code plugins to enable (e.g. \"superpowers@superpowers-marketplace\").";
       };
     };
 
@@ -140,7 +190,15 @@ in
 
       # Claude Code settings
       (lib.mkIf cfg.claude.enable {
-        ".claude/settings.json".text = builtins.toJSON cfg.claude.settings;
+        ".claude/settings.json".text = builtins.toJSON (
+          cfg.claude.settings
+          // lib.optionalAttrs (cfg.claude.enabledPlugins != [ ]) {
+            enabledPlugins = builtins.listToAttrs (map (p: {
+              name = p;
+              value = true;
+            }) cfg.claude.enabledPlugins);
+          }
+        );
       })
 
       # OpenCode config + AGENTS.md
@@ -155,6 +213,27 @@ in
         ".codex/AGENTS.md".source = config.lib.file.mkOutOfStoreSymlink
           "${agentsPath}/AGENTS.md";
       })
+
+      # Commands/skills — Claude Code
+      (lib.mapAttrs' (name: cmd:
+        lib.nameValuePair ".claude/commands/${name}.md" {
+          source = cmd.file;
+        }
+      ) cfg.commands)
+
+      # Commands/skills — Codex (with YAML frontmatter)
+      (lib.mkIf cfg.codex.enable (lib.mapAttrs' (name: cmd:
+        lib.nameValuePair ".codex/prompts/${name}.md" {
+          text = renderCodexPrompt name cmd;
+        }
+      ) cfg.commands))
+
+      # Commands/skills — OpenCode (with YAML frontmatter)
+      (lib.mkIf cfg.opencode.enable (lib.mapAttrs' (name: cmd:
+        lib.nameValuePair ".config/opencode/skills/${name}/SKILL.md" {
+          text = renderOpenCodeSkill name cmd;
+        }
+      ) cfg.commands))
     ];
 
     # Codex: patch mcp_servers in config.toml via activation script
