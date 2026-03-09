@@ -1,0 +1,202 @@
+#!/usr/bin/env -S uv run --script --quiet
+# /// script
+# dependencies = ["click", "python-dotenv", "splunk-sdk"]
+# ///
+"""
+splunk-query - Execute Splunk queries and save results.
+
+Config: Set SPLUNK_HOST (e.g. https://splunk.example.com) and either
+        SPLUNK_TOKEN (bearer token) or SPLUNK_USERNAME + SPLUNK_PASSWORD.
+        Token takes priority.
+"""
+import json
+import os
+import sys
+import time
+from datetime import datetime
+from pathlib import Path
+from urllib.parse import urlparse
+
+import click
+from dotenv import load_dotenv
+import splunklib.client as splunk_client
+import splunklib.results as splunk_results
+
+
+def load_config():
+    """Load configuration from environment variables."""
+    for env_path in [Path.cwd() / '.env', Path.home() / '.splunk-query-cli' / '.env']:
+        if env_path.exists():
+            load_dotenv(env_path)
+            break
+
+    raw_host = os.getenv('SPLUNK_HOST', 'https://splunk.taservs.net')
+    if not raw_host.startswith('http://') and not raw_host.startswith('https://'):
+        raw_host = f"https://{raw_host}"
+    parsed = urlparse(raw_host)
+
+    return {
+        'host': parsed.hostname,
+        'port': parsed.port or (80 if parsed.scheme == 'http' else 443),
+        'scheme': parsed.scheme,
+        'token': os.getenv('SPLUNK_TOKEN'),
+        'username': os.getenv('SPLUNK_USERNAME'),
+        'password': os.getenv('SPLUNK_PASSWORD'),
+    }
+
+
+def require_credentials(config):
+    """Verify credentials are set, exit if not."""
+    if not config['token'] and not (config['username'] and config['password']):
+        click.echo("Error: Set SPLUNK_TOKEN or both SPLUNK_USERNAME and SPLUNK_PASSWORD.", err=True)
+        sys.exit(1)
+
+
+def connect(config):
+    """Create a Splunk service connection. Token takes priority over username/password."""
+    kwargs = {
+        'host': config['host'],
+        'port': config['port'],
+        'scheme': config['scheme'],
+    }
+    if config['token']:
+        kwargs['splunkToken'] = config['token']
+    else:
+        kwargs['username'] = config['username']
+        kwargs['password'] = config['password']
+    return splunk_client.connect(**kwargs)
+
+
+@click.group()
+@click.version_option(version='1.0.0')
+def cli():
+    """Splunk Query CLI - Execute Splunk queries and save results."""
+    pass
+
+
+@cli.command()
+def test_connection():
+    """Test connection to Splunk.
+
+    Example:
+        splunk-query test-connection
+    """
+    config = load_config()
+    require_credentials(config)
+
+    click.echo(f"Testing connection to {config['scheme']}://{config['host']}:{config['port']}...")
+
+    try:
+        service = connect(config)
+        list(service.apps)
+        click.echo("Connection successful!")
+    except Exception as e:
+        click.echo("Connection failed!", err=True)
+        click.echo(f"Error: {e}", err=True)
+        sys.exit(1)
+
+
+@cli.command()
+@click.argument('query')
+@click.option('--earliest', '-e', default='-24h', help='Earliest time (e.g., -7d, -24h)')
+@click.option('--latest', '-l', default='now', help='Latest time (default: now)')
+@click.option('--output-dir', '-o', required=True, help='Directory to save results')
+@click.option('--name', '-n', required=True, help='Name for this query')
+@click.option('--max-results', '-m', default=1000, help='Maximum results to return')
+@click.option('--timeout', '-t', default=300, help='Query timeout in seconds')
+@click.option('--json-output', is_flag=True, help='Output as JSON to stdout')
+def run(query, earliest, latest, output_dir, name, max_results, timeout, json_output):
+    """Execute a Splunk query and save results.
+
+    QUERY is the SPL query to execute.
+
+    Example:
+        splunk-query run "index=kubernetes_dems host=draco* | head 10" \\
+            --output-dir ~/Documents/results \\
+            --name "draco_logs" \\
+            --earliest "-7d"
+    """
+    config = load_config()
+    require_credentials(config)
+
+    click.echo(f"Connecting to Splunk at {config['host']}...")
+    click.echo(f"Executing query: {query[:100]}{'...' if len(query) > 100 else ''}")
+    click.echo(f"Time range: {earliest} to {latest}")
+
+    try:
+        service = connect(config)
+
+        # Ensure query starts with 'search' if needed
+        spl = query
+        if not spl.strip().startswith('search ') and not spl.strip().startswith('|'):
+            spl = f"search {spl}"
+
+        job = service.jobs.create(spl, **{
+            'earliest_time': earliest,
+            'latest_time': latest,
+            'exec_mode': 'blocking',
+            'count': max_results,
+            'timeout': timeout,
+        })
+
+        start_time = time.time()
+        while not job.is_done():
+            if time.time() - start_time > timeout:
+                job.cancel()
+                raise TimeoutError(f"Query timed out after {timeout} seconds")
+            time.sleep(0.5)
+
+        job.refresh()
+        stats = {
+            'event_count': int(job['eventCount']),
+            'result_count': int(job['resultCount']),
+            'scan_count': int(job['scanCount']),
+            'duration_secs': float(job['runDuration']),
+            'sid': job.sid,
+        }
+
+        result_stream = job.results(output_mode='json', count=max_results)
+        reader = splunk_results.JSONResultsReader(result_stream)
+        results = [r for r in reader if isinstance(r, dict)]
+
+        click.echo(f"\nQuery completed!")
+        click.echo(f"Results: {len(results)} events")
+        click.echo(f"Duration: {stats['duration_secs']} seconds")
+
+        # Save results
+        out_path = Path(output_dir).expanduser()
+        out_path.mkdir(parents=True, exist_ok=True)
+
+        ts = datetime.now().strftime("%Y-%m-%dT%H-%M-%S")
+        result_file = out_path / f"{name}_{ts}.json"
+
+        result_data = {
+            'query_name': name,
+            'executed_at': datetime.now().isoformat(),
+            'query': query,
+            'earliest_time': earliest,
+            'latest_time': latest,
+            'result_count': len(results),
+            'stats': stats,
+            'results': results,
+        }
+
+        with open(result_file, 'w') as f:
+            json.dump(result_data, f, indent=2)
+
+        click.echo(f"Saved to: {result_file}")
+
+        if json_output:
+            click.echo("\n--- JSON Output ---")
+            click.echo(json.dumps(results, indent=2))
+
+    except TimeoutError as e:
+        click.echo(f"Error: {e}", err=True)
+        sys.exit(1)
+    except Exception as e:
+        click.echo(f"Error executing query: {e}", err=True)
+        sys.exit(1)
+
+
+if __name__ == '__main__':
+    cli()

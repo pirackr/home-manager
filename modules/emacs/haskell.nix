@@ -2,12 +2,18 @@
 
 {
   config = {
-    home.packages = with pkgs.haskellPackages; [
-      ghc
-      ormolu
-      hoogle
-      cabal-install
-      haskell-language-server
+    home.packages = [
+      (pkgs.buildEnv {
+        name = "haskell-tools";
+        paths = with pkgs.haskellPackages; [
+          ghc
+          ormolu
+          hoogle
+          cabal-install
+          haskell-language-server
+        ];
+        ignoreCollisions = true;
+      })
     ];
 
     programs.emacs = {

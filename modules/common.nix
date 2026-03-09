@@ -20,7 +20,7 @@ in
     ./fcitx.nix
     ./scripts
     ./agents
-    ./workspace
+    ./rq-cli.nix
     ./ui
   ];
 
@@ -82,6 +82,8 @@ in
 
       pkgs.gh
       pkgs.git-crypt
+      pkgs.argocd 
+      pkgs.tree
     ])
     ++ lib.optionals pkgs.stdenv.isLinux (map dontCheck [
       pkgs.firefox
