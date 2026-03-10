@@ -11,9 +11,13 @@
     nixgl.url   = "github:nix-community/nixGL";
     mac-app-util.url = "github:hraban/mac-app-util";
     peon-ping.url = "github:PeonPing/peon-ping";
+    superpowers = {
+      url = "github:obra/superpowers";
+      flake = false;
+    };
   };
 
-  outputs = { nixpkgs, home-manager, flake-utils, nixgl, mac-app-util, peon-ping, ... }:
+  outputs = { nixpkgs, home-manager, flake-utils, nixgl, mac-app-util, peon-ping, superpowers, ... }:
     {
       homeConfigurations = {
         "pirackr@work" = home-manager.lib.homeManagerConfiguration {
@@ -36,7 +40,7 @@
             ./users/work.nix
           ];
           extraSpecialArgs = {
-            inherit nixpkgs;
+            inherit nixpkgs superpowers;
             };
           };
 

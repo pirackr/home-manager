@@ -344,7 +344,24 @@
         "mac-app-util": "mac-app-util",
         "nixgl": "nixgl",
         "nixpkgs": "nixpkgs_6",
-        "peon-ping": "peon-ping"
+        "peon-ping": "peon-ping",
+        "superpowers": "superpowers"
+      }
+    },
+    "superpowers": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1773103048,
+        "narHash": "sha256-Re8VNhcgbfmW/AENCcDc/hRTlkVT9e+AE/vrQkbqs68=",
+        "owner": "obra",
+        "repo": "superpowers",
+        "rev": "33e55e60b2efcb69509bc233dfc128112012b2c8",
+        "type": "github"
+      },
+      "original": {
+        "owner": "obra",
+        "repo": "superpowers",
+        "type": "github"
       }
     },
     "systems": {

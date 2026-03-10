@@ -95,15 +95,18 @@ let
       // lib.optionalAttrs (server.oauth != { }) { oauth = server.oauth; }
       // lib.optionalAttrs (server.env != { }) { env = server.env; };
 
-  # Render a single MCP server to OpenCode format (explicit type, "http" -> "remote")
+  # Render a single MCP server to OpenCode format
+  # OpenCode uses: root key "mcp", type "local"/"remote", command as array, environment (not env), enabled flag
   renderOpenCodeMcpServer = name: server:
     if server.type == "stdio" then
-      { type = "stdio"; command = server.command; args = server.args; }
-      // lib.optionalAttrs (server.env != { }) { env = server.env; }
+      { type = "local"; enabled = true; command = [ server.command ] ++ server.args; }
+      // lib.optionalAttrs (server.env != { }) { environment = server.env; }
     else
-      { type = if server.type == "http" then "remote" else server.type; url = server.url; }
+      { type = "remote"; enabled = true; url = server.url; }
       // lib.optionalAttrs (server.headers != { }) { headers = server.headers; }
-      // lib.optionalAttrs (server.env != { }) { env = server.env; };
+      // lib.optionalAttrs (server.oauth != { }) {
+        oauth = lib.filterAttrs (k: _: builtins.elem k [ "clientId" "clientSecret" "scope" ]) server.oauth;
+      };
 
   # Filter MCP servers for a specific tool
   mcpServersFor = tool:
@@ -118,7 +121,7 @@ let
   renderOpenCodeConfig = let
     servers = mcpServersFor "opencode";
     mcpPart = lib.optionalAttrs (servers != { }) {
-      mcpServers = lib.mapAttrs renderOpenCodeMcpServer servers;
+      mcp = lib.mapAttrs renderOpenCodeMcpServer servers;
     };
   in cfg.opencode.settings // mcpPart;
 
@@ -168,6 +171,11 @@ in
         default = { };
         description = "OpenCode settings (providers, agents, shell, etc).";
       };
+      superpowersPath = lib.mkOption {
+        type = lib.types.nullOr lib.types.path;
+        default = null;
+        description = "Path to superpowers repo for OpenCode plugin and skills.";
+      };
     };
 
     codex = {
@@ -206,6 +214,14 @@ in
         ".config/opencode/opencode.json".text = builtins.toJSON renderOpenCodeConfig;
         ".config/opencode/AGENTS.md".source = config.lib.file.mkOutOfStoreSymlink
           "${agentsPath}/AGENTS.md";
+      })
+
+      # OpenCode superpowers plugin + skills
+      (lib.mkIf (cfg.opencode.enable && cfg.opencode.superpowersPath != null) {
+        ".config/opencode/plugins/superpowers.js".source =
+          "${cfg.opencode.superpowersPath}/.opencode/plugins/superpowers.js";
+        ".config/opencode/skills/superpowers".source =
+          "${cfg.opencode.superpowersPath}/skills";
       })
 
       # Codex AGENTS.md
