@@ -17,7 +17,7 @@
         ccusage = "npx ccusage";
         claude = "npx @anthropic-ai/claude-code";
         codex = "npx  @openai/codex";
-        opencode = "npx  opencode-ai";
+        opencode = "npx  opencode-ai@latest";
         openspec = "npx @fission-ai/openspec";
         e = "emacs -nw";
       };
