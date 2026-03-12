@@ -71,6 +71,7 @@ in
       pkgs.font-awesome # FontAwesome icons
 
       pkgs.nodejs
+      pkgs.mermaid-cli
       pkgs.uv
       pkgs.awscli2
       pkgs.cookiecutter
