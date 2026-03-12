@@ -44,6 +44,11 @@ let
         default = { };
         description = "OAuth configuration for remote MCP servers (e.g. clientId, callbackPort).";
       };
+      name = lib.mkOption {
+        type = lib.types.nullOr lib.types.str;
+        default = null;
+        description = "Rendered MCP server name for tool configs; defaults to the attribute name.";
+      };
       enableFor = lib.mkOption {
         type = lib.types.listOf (lib.types.enum [ "claude" "codex" "opencode" "cursor" ]);
         default = [ "claude" "codex" "opencode" "cursor" ];
@@ -114,25 +119,48 @@ let
 
   # Render all MCP servers for a tool into { mcpServers = { ... } }
   renderMcpJson = tool:
-    let servers = mcpServersFor tool;
-    in { mcpServers = lib.mapAttrs renderMcpServer servers; };
+    let
+      servers = mcpServersFor tool;
+      renderedServers = lib.listToAttrs (map (attrName:
+        let server = servers.${attrName};
+        in {
+          name = if server.name != null then server.name else attrName;
+          value = renderMcpServer attrName server;
+        }
+      ) (builtins.attrNames servers));
+    in { mcpServers = renderedServers; };
 
   # Render OpenCode config with MCP servers and extra settings merged
   renderOpenCodeConfig = let
     servers = mcpServersFor "opencode";
     mcpPart = lib.optionalAttrs (servers != { }) {
-      mcp = lib.mapAttrs renderOpenCodeMcpServer servers;
+      mcp = lib.listToAttrs (map (attrName:
+        let server = servers.${attrName};
+        in {
+          name = if server.name != null then server.name else attrName;
+          value = renderOpenCodeMcpServer attrName server;
+        }
+      ) (builtins.attrNames servers));
     };
   in cfg.opencode.settings // mcpPart;
 
-  # Render Codex MCP servers as TOML using pkgs.formats.toml
   codexMcpServers = mcpServersFor "codex";
-  codexMcpTomlFile = (pkgs.formats.toml { }).generate "codex-mcp.toml" {
-    mcp_servers = lib.mapAttrs (name: server:
-      { command = server.command; args = server.args; }
-      // lib.optionalAttrs (server.env != { }) { env = server.env; }
-    ) codexMcpServers;
+  codexConfigToml = cfg.codex.settings // lib.optionalAttrs (codexMcpServers != { }) {
+    mcp_servers = lib.listToAttrs (map (attrName:
+      let server = codexMcpServers.${attrName};
+      in {
+        name = if server.name != null then server.name else attrName;
+        value =
+          if server.type == "stdio" then
+            { command = server.command; args = server.args; }
+            // lib.optionalAttrs (server.env != { }) { env = server.env; }
+          else
+            { url = server.url; }
+            // lib.optionalAttrs (server.oauth != { }) { oauth = server.oauth; };
+      }
+    ) (builtins.attrNames codexMcpServers));
   };
+  codexConfigTomlFile = (pkgs.formats.toml { }).generate "codex-config.toml" codexConfigToml;
 in
 {
   options.modules.agents = {
@@ -180,6 +208,16 @@ in
 
     codex = {
       enable = lib.mkEnableOption "Codex CLI configuration";
+      settings = lib.mkOption {
+        type = lib.types.attrs;
+        default = { };
+        description = "Codex CLI settings written to config.toml.";
+      };
+      superpowersPath = lib.mkOption {
+        type = lib.types.nullOr lib.types.path;
+        default = null;
+        description = "Path to superpowers repo for Codex skills.";
+      };
     };
   };
 
@@ -230,6 +268,12 @@ in
           "${agentsPath}/AGENTS.md";
       })
 
+      # Codex superpowers skills
+      (lib.mkIf (cfg.codex.enable && cfg.codex.superpowersPath != null) {
+        ".agents/skills/superpowers".source =
+          "${cfg.codex.superpowersPath}/skills";
+      })
+
       # Commands/skills — Claude Code
       (lib.mapAttrs' (name: cmd:
         lib.nameValuePair ".claude/commands/${name}.md" {
@@ -252,24 +296,29 @@ in
       ) cfg.commands))
     ];
 
-    # Codex: patch mcp_servers in config.toml via activation script
-    # (config.toml has runtime state like [projects.*] we must preserve)
-    home.activation.codexMcpServers = lib.mkIf (cfg.codex.enable && codexMcpServers != { }) (
+    # Codex: patch a managed block in config.toml while preserving runtime state.
+    home.activation.codexConfig = lib.mkIf (cfg.codex.enable && codexConfigToml != { }) (
       lib.hm.dag.entryAfter [ "writeBoundary" ] ''
         CODEX_CONFIG="${config.home.homeDirectory}/.codex/config.toml"
+        MARKER_START="# BEGIN NIX MANAGED CODEX CONFIG"
+        MARKER_END="# END NIX MANAGED CODEX CONFIG"
         if [ -f "$CODEX_CONFIG" ]; then
-          # Remove existing [mcp_servers.*] sections
           ${pkgs.gawk}/bin/awk '
-            /^\[mcp_servers\./ { skip=1; next }
-            /^\[/ { skip=0 }
-            !skip { print }
+            $0 == ENVIRON["MARKER_START"] { managed=1; next }
+            $0 == ENVIRON["MARKER_END"] { managed=0; next }
+            /^\[mcp_servers\./ { legacy_mcp=1; next }
+            legacy_mcp && /^\[/ { legacy_mcp=0 }
+            !managed && !legacy_mcp { print }
           ' "$CODEX_CONFIG" > "$CODEX_CONFIG.tmp"
-          # Append Nix-generated MCP servers
-          cat ${codexMcpTomlFile} >> "$CODEX_CONFIG.tmp"
+          printf '\n%s\n' "$MARKER_START" >> "$CODEX_CONFIG.tmp"
+          cat ${codexConfigTomlFile} >> "$CODEX_CONFIG.tmp"
+          printf '%s\n' "$MARKER_END" >> "$CODEX_CONFIG.tmp"
           mv "$CODEX_CONFIG.tmp" "$CODEX_CONFIG"
         else
           mkdir -p "$(dirname "$CODEX_CONFIG")"
-          cp ${codexMcpTomlFile} "$CODEX_CONFIG"
+          printf '%s\n' "$MARKER_START" > "$CODEX_CONFIG"
+          cat ${codexConfigTomlFile} >> "$CODEX_CONFIG"
+          printf '%s\n' "$MARKER_END" >> "$CODEX_CONFIG"
         fi
       ''
     );
