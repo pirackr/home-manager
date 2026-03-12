@@ -161,6 +161,13 @@ let
     ) (builtins.attrNames codexMcpServers));
   };
   codexConfigTomlFile = (pkgs.formats.toml { }).generate "codex-config.toml" codexConfigToml;
+  localAgentSkillTrees = lib.mapAttrsToList (name: cmd:
+    pkgs.writeTextDir "local-skills/${name}/SKILL.md" (renderOpenCodeSkill name cmd)
+  ) cfg.commands;
+  localAgentSkillsDir = pkgs.buildEnv {
+    name = "local-agent-skills";
+    paths = localAgentSkillTrees;
+  };
 in
 {
   options.modules.agents = {
@@ -322,5 +329,12 @@ in
         fi
       ''
     );
+
+    home.activation.localAgentSkills = lib.hm.dag.entryAfter [ "linkGeneration" ] ''
+      AGENTS_SKILLS_DIR="${config.home.homeDirectory}/.agents/skills"
+      mkdir -p "$AGENTS_SKILLS_DIR"
+      rm -rf "$AGENTS_SKILLS_DIR/local-skills"
+      cp -RL ${localAgentSkillsDir}/local-skills "$AGENTS_SKILLS_DIR/"
+    '';
   };
 }
