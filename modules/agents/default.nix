@@ -333,6 +333,9 @@ in
     home.activation.localAgentSkills = lib.hm.dag.entryAfter [ "linkGeneration" ] ''
       AGENTS_SKILLS_DIR="${config.home.homeDirectory}/.agents/skills"
       mkdir -p "$AGENTS_SKILLS_DIR"
+      if [ -e "$AGENTS_SKILLS_DIR/local-skills" ]; then
+        chmod -R u+w "$AGENTS_SKILLS_DIR/local-skills"
+      fi
       rm -rf "$AGENTS_SKILLS_DIR/local-skills"
       cp -RL ${localAgentSkillsDir}/local-skills "$AGENTS_SKILLS_DIR/"
     '';
