@@ -15,3 +15,4 @@ result-*
 git-crypt-key
 
 .serena/
+.worktrees/
