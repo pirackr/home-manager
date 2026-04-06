@@ -19,6 +19,7 @@
         codex = "npx  @openai/codex";
         opencode = "npx  opencode-ai@latest";
         openspec = "npx @fission-ai/openspec";
+        devcontainer = "npx @devcontainers/cli";
         e = "emacs -nw";
       };
       interactiveShellInit = ''

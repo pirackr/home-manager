@@ -1,4 +1,4 @@
-{ config, lib, pkgs, ... }:
+{ config, lib, pkgs, ralph ? null, ... }:
 
 let
   cfg = config.modules.agents;
@@ -89,6 +89,28 @@ let
       ---
     '' + builtins.readFile cmd.file;
 
+  # Prepend OpenCode command frontmatter
+  renderOpenCodeCommand = name: cmd:
+    ''
+      ---
+      description: "${cmd.description}"
+      argument-hint: ""
+      ---
+    '' + builtins.readFile cmd.file;
+
+  builtinCommands = {
+    init-deep = {
+      description = "Initialize hierarchical AGENTS.md knowledge base";
+      file = ./commands/init-deep.md;
+    };
+    ralph = {
+      description = "Convert requirements into Ralph format and point to the managed runner";
+      file = ./commands/ralph.md;
+    };
+  };
+
+  commands = builtinCommands // cfg.commands;
+
   # Render a single MCP server to the .mcp.json format (Claude/Cursor style)
   renderMcpServer = name: server:
     if server.type == "stdio" then
@@ -163,7 +185,7 @@ let
   codexConfigTomlFile = (pkgs.formats.toml { }).generate "codex-config.toml" codexConfigToml;
   localAgentSkillTrees = lib.mapAttrsToList (name: cmd:
     pkgs.writeTextDir "local-skills/${name}/SKILL.md" (renderOpenCodeSkill name cmd)
-  ) cfg.commands;
+  ) commands;
   localAgentSkillsDir = pkgs.buildEnv {
     name = "local-agent-skills";
     paths = localAgentSkillTrees;
@@ -197,6 +219,11 @@ in
         default = [ ];
         description = "List of Claude Code plugins to enable (e.g. \"superpowers@superpowers-marketplace\").";
       };
+      extraKnownMarketplaces = lib.mkOption {
+        type = lib.types.attrsOf lib.types.attrs;
+        default = { };
+        description = "Extra known marketplaces for Claude Code plugins.";
+      };
     };
 
     opencode = {
@@ -211,7 +238,7 @@ in
         default = null;
         description = "Path to superpowers repo for OpenCode plugin and skills.";
       };
-    };
+};
 
     codex = {
       enable = lib.mkEnableOption "Codex CLI configuration";
@@ -251,6 +278,9 @@ in
               value = true;
             }) cfg.claude.enabledPlugins);
           }
+          // lib.optionalAttrs (cfg.claude.extraKnownMarketplaces != { }) {
+            extraKnownMarketplaces = cfg.claude.extraKnownMarketplaces;
+          }
         );
       })
 
@@ -261,12 +291,21 @@ in
           "${agentsPath}/AGENTS.md";
       })
 
+
       # OpenCode superpowers plugin + skills
       (lib.mkIf (cfg.opencode.enable && cfg.opencode.superpowersPath != null) {
         ".config/opencode/plugins/superpowers.js".source =
           "${cfg.opencode.superpowersPath}/.opencode/plugins/superpowers.js";
         ".config/opencode/skills/superpowers".source =
           "${cfg.opencode.superpowersPath}/skills";
+      })
+
+      # OpenCode Ralph skill + script
+      (lib.mkIf (cfg.opencode.enable && ralph != null) {
+        ".config/opencode/skills/ralph".source =
+          "${ralph}/skills/ralph";
+        ".config/opencode/scripts/ralph.sh".source =
+          "${ralph}/ralph.sh";
       })
 
       # Codex AGENTS.md
@@ -281,26 +320,41 @@ in
           "${cfg.codex.superpowersPath}/skills";
       })
 
+      # Codex Ralph skill + script
+      (lib.mkIf (cfg.codex.enable && ralph != null) {
+        ".agents/skills/ralph".source =
+          "${ralph}/skills/ralph";
+        ".codex/scripts/ralph.sh".source =
+          "${ralph}/ralph.sh";
+      })
+
       # Commands/skills — Claude Code
       (lib.mapAttrs' (name: cmd:
         lib.nameValuePair ".claude/commands/${name}.md" {
           source = cmd.file;
         }
-      ) cfg.commands)
+      ) commands)
 
       # Commands/skills — Codex (with YAML frontmatter)
       (lib.mkIf cfg.codex.enable (lib.mapAttrs' (name: cmd:
         lib.nameValuePair ".codex/prompts/${name}.md" {
           text = renderCodexPrompt name cmd;
         }
-      ) cfg.commands))
+      ) commands))
 
       # Commands/skills — OpenCode (with YAML frontmatter)
       (lib.mkIf cfg.opencode.enable (lib.mapAttrs' (name: cmd:
         lib.nameValuePair ".config/opencode/skills/${name}/SKILL.md" {
           text = renderOpenCodeSkill name cmd;
         }
-      ) cfg.commands))
+      ) commands))
+
+      # Commands — OpenCode slash commands
+      (lib.mkIf cfg.opencode.enable (lib.mapAttrs' (name: cmd:
+        lib.nameValuePair ".config/opencode/command/${name}.md" {
+          text = renderOpenCodeCommand name cmd;
+        }
+      ) commands))
     ];
 
     # Codex: patch a managed block in config.toml while preserving runtime state.

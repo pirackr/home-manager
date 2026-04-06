@@ -337,6 +337,22 @@
         "type": "github"
       }
     },
+    "ralph": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1769996781,
+        "narHash": "sha256-HuNtf9X/YuQVBQ4+EK0DP1lQe3RCUbj2OuwYzBqX7m0=",
+        "ref": "refs/heads/main",
+        "rev": "6c53cb0b831ebe8739c6a003e22af14902d8b0b5",
+        "revCount": 20,
+        "type": "git",
+        "url": "https://github.com/snarktank/ralph.git"
+      },
+      "original": {
+        "type": "git",
+        "url": "https://github.com/snarktank/ralph.git"
+      }
+    },
     "root": {
       "inputs": {
         "flake-utils": "flake-utils",
@@ -345,6 +361,7 @@
         "nixgl": "nixgl",
         "nixpkgs": "nixpkgs_6",
         "peon-ping": "peon-ping",
+        "ralph": "ralph",
         "superpowers": "superpowers"
       }
     },

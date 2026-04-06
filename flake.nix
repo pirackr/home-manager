@@ -11,13 +11,17 @@
     nixgl.url   = "github:nix-community/nixGL";
     mac-app-util.url = "github:hraban/mac-app-util";
     peon-ping.url = "github:PeonPing/peon-ping";
+    ralph = {
+      url = "git+https://github.com/snarktank/ralph.git";
+      flake = false;
+    };
     superpowers = {
       url = "github:obra/superpowers";
       flake = false;
     };
   };
 
-  outputs = { nixpkgs, home-manager, flake-utils, nixgl, mac-app-util, peon-ping, superpowers, ... }:
+  outputs = { nixpkgs, home-manager, flake-utils, nixgl, mac-app-util, peon-ping, ralph, superpowers, ... }:
     {
       homeConfigurations = {
         "pirackr@work" = home-manager.lib.homeManagerConfiguration {
@@ -40,9 +44,26 @@
             ./users/work.nix
           ];
           extraSpecialArgs = {
-            inherit nixpkgs superpowers;
+            inherit nixpkgs ralph superpowers;
             };
           };
+
+        "dev@container" = home-manager.lib.homeManagerConfiguration {
+          pkgs = import nixpkgs {
+            system = "aarch64-linux";
+            config = {
+              allowUnfree = true;
+              allowUnfreePredicate = _: true;
+            };
+          };
+          modules = [
+            ./modules/agents
+            ./users/container.nix
+          ];
+          extraSpecialArgs = {
+            inherit nixpkgs ralph superpowers;
+          };
+        };
 
         "pirackr@home" = home-manager.lib.homeManagerConfiguration {
           pkgs = import nixpkgs {

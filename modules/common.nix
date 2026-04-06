@@ -51,6 +51,7 @@ in
       pkgs.kind
       pkgs.kubernetes-helm
       pkgs.jq
+      pkgs.bun
 
       pkgs.enchant
       pkgs.hunspell
@@ -83,8 +84,10 @@ in
 
       pkgs.gh
       pkgs.git-crypt
-      pkgs.argocd 
+      pkgs.argocd
       pkgs.tree
+      pkgs.podman
+      pkgs.duckdb
     ])
     ++ lib.optionals pkgs.stdenv.isLinux (map dontCheck [
       pkgs.firefox
