@@ -1,4 +1,4 @@
-{ config, pkgs, nixgl, lib, ... }:
+{ config, pkgs, nixgl, lib, superpowers, ... }:
 
 {
   # User-specific configuration for hhnguyen
@@ -41,6 +41,52 @@
     emacs.enable = true;
     fcitx.enable = true;
     
+    agents = {
+      enable = true;
+
+      claude = {
+        enable = true;
+        settings = {
+          env = {
+            ENABLE_TOOL_SEARCH = "true";
+            ENABLE_LSP_TOOL = "1";
+          };
+          model = "opus";
+        };
+        enabledPlugins = [
+          "superpowers@claude-plugins-official"
+          "context-mode@context-mode"
+        ];
+        extraKnownMarketplaces = {
+          superpowers-marketplace = {
+            source = {
+              source = "github";
+              repo = "obra/superpowers-marketplace";
+            };
+          };
+          context-mode = {
+            source = {
+              source = "github";
+              repo = "mksglu/context-mode";
+            };
+          };
+        };
+      };
+
+      opencode = {
+        enable = true;
+        superpowersPath = superpowers;
+      };
+
+      mcpServers = {
+        context-mode = {
+          command = "npx";
+          args = [ "-y" "context-mode" ];
+          enableFor = [ "opencode" ];
+        };
+      };
+    };
+
     # UI modules (alternatively, can use ui.enable = true to enable all)
     ui = {
       hyprland.enable = true;  # Hyprland window manager

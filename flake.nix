@@ -78,7 +78,7 @@
             ./users/home.nix
           ];
           extraSpecialArgs = {
-            inherit nixpkgs;
+            inherit nixpkgs ralph superpowers;
             nixgl = nixgl;
           };
         };
