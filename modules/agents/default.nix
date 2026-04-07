@@ -1,4 +1,4 @@
-{ config, lib, pkgs, ralph ? null, ... }:
+{ config, lib, pkgs, ... }:
 
 let
   cfg = config.modules.agents;
@@ -98,18 +98,7 @@ let
       ---
     '' + builtins.readFile cmd.file;
 
-  builtinCommands = {
-    init-deep = {
-      description = "Initialize hierarchical AGENTS.md knowledge base";
-      file = ./commands/init-deep.md;
-    };
-    ralph = {
-      description = "Convert requirements into Ralph format and point to the managed runner";
-      file = ./commands/ralph.md;
-    };
-  };
-
-  commands = builtinCommands // cfg.commands;
+  commands = cfg.commands;
 
   # Render a single MCP server to the .mcp.json format (Claude/Cursor style)
   renderMcpServer = name: server:
@@ -233,12 +222,7 @@ in
         default = { };
         description = "OpenCode settings (providers, agents, shell, etc).";
       };
-      superpowersPath = lib.mkOption {
-        type = lib.types.nullOr lib.types.path;
-        default = null;
-        description = "Path to superpowers repo for OpenCode plugin and skills.";
-      };
-};
+    };
 
     codex = {
       enable = lib.mkEnableOption "Codex CLI configuration";
@@ -290,24 +274,6 @@ in
         ".config/opencode/AGENTS.md".source = config.lib.file.mkOutOfStoreSymlink
           "${agentsPath}/AGENTS.md";
       })
-
-
-      # OpenCode superpowers plugin + skills
-      (lib.mkIf (cfg.opencode.enable && cfg.opencode.superpowersPath != null) {
-        ".config/opencode/plugins/superpowers.js".source =
-          "${cfg.opencode.superpowersPath}/.opencode/plugins/superpowers.js";
-        ".config/opencode/skills/superpowers".source =
-          "${cfg.opencode.superpowersPath}/skills";
-      })
-
-      # OpenCode Ralph skill + script
-      (lib.mkIf (cfg.opencode.enable && ralph != null) {
-        ".config/opencode/skills/ralph".source =
-          "${ralph}/skills/ralph";
-        ".config/opencode/scripts/ralph.sh".source =
-          "${ralph}/ralph.sh";
-      })
-
       # Codex AGENTS.md
       (lib.mkIf cfg.codex.enable {
         ".codex/AGENTS.md".source = config.lib.file.mkOutOfStoreSymlink
@@ -318,14 +284,6 @@ in
       (lib.mkIf (cfg.codex.enable && cfg.codex.superpowersPath != null) {
         ".agents/skills/superpowers".source =
           "${cfg.codex.superpowersPath}/skills";
-      })
-
-      # Codex Ralph skill + script
-      (lib.mkIf (cfg.codex.enable && ralph != null) {
-        ".agents/skills/ralph".source =
-          "${ralph}/skills/ralph";
-        ".codex/scripts/ralph.sh".source =
-          "${ralph}/ralph.sh";
       })
 
       # Commands/skills — Claude Code
@@ -391,7 +349,9 @@ in
         chmod -R u+w "$AGENTS_SKILLS_DIR/local-skills"
       fi
       rm -rf "$AGENTS_SKILLS_DIR/local-skills"
-      cp -RL ${localAgentSkillsDir}/local-skills "$AGENTS_SKILLS_DIR/"
+      if [ -d ${localAgentSkillsDir}/local-skills ]; then
+        cp -RL ${localAgentSkillsDir}/local-skills "$AGENTS_SKILLS_DIR/"
+      fi
     '';
   };
 }

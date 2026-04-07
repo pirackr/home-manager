@@ -75,7 +75,13 @@
 
       opencode = {
         enable = true;
-        superpowersPath = superpowers;
+        settings = {
+          compaction.auto = true;
+          plugin = [
+            "superpowers@git+https://github.com/obra/superpowers.git"
+            "autopilot@git+ssh://git@github.com/pirackr/autopilot.git"
+          ];
+        };
       };
 
       mcpServers = {
