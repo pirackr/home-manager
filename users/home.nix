@@ -43,36 +43,6 @@
     
     agents = {
       enable = true;
-
-      claude = {
-        enable = true;
-        settings = {
-          env = {
-            ENABLE_TOOL_SEARCH = "true";
-            ENABLE_LSP_TOOL = "1";
-          };
-          model = "opus";
-        };
-        enabledPlugins = [
-          "superpowers@claude-plugins-official"
-          "context-mode@context-mode"
-        ];
-        extraKnownMarketplaces = {
-          superpowers-marketplace = {
-            source = {
-              source = "github";
-              repo = "obra/superpowers-marketplace";
-            };
-          };
-          context-mode = {
-            source = {
-              source = "github";
-              repo = "mksglu/context-mode";
-            };
-          };
-        };
-      };
-
     };
 
     # UI modules (alternatively, can use ui.enable = true to enable all)
