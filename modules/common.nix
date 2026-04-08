@@ -19,7 +19,6 @@ in
     ./k8s.nix
     ./fcitx.nix
     ./scripts
-    ./agents
     ./rq-cli.nix
     ./ui
   ];

@@ -33,11 +33,5 @@ in
 
   config = lib.mkIf cfg.enable {
     home.packages = [ rq-cli ];
-
-    # Register the quip skill from rq-cli with the agents module
-    modules.agents.commands.quip = {
-      description = "Work with Quip documents";
-      file = "${cfg.src}/skills/quip.md";
-    };
   };
 }
