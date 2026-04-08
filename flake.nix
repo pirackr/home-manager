@@ -53,7 +53,6 @@
             };
           };
           modules = [
-            ./modules/agents
             ./users/container.nix
           ];
           extraSpecialArgs = {
