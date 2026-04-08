@@ -50,8 +50,8 @@ let
         description = "Rendered MCP server name for tool configs; defaults to the attribute name.";
       };
       enableFor = lib.mkOption {
-        type = lib.types.listOf (lib.types.enum [ "claude" "codex" "opencode" "cursor" ]);
-        default = [ "claude" "codex" "opencode" "cursor" ];
+        type = lib.types.listOf (lib.types.enum [ "claude" "cursor" ]);
+        default = [ "claude" "cursor" ];
         description = "Which AI tools this MCP server is enabled for.";
       };
     };
@@ -71,33 +71,6 @@ let
     };
   };
 
-  # Prepend Codex YAML frontmatter to a command prompt
-  renderCodexPrompt = name: cmd:
-    ''
-      ---
-      description: "${cmd.description}"
-      argument-hint: ""
-      ---
-    '' + builtins.readFile cmd.file;
-
-  # Prepend OpenCode YAML frontmatter to a command prompt
-  renderOpenCodeSkill = name: cmd:
-    ''
-      ---
-      name: "${name}"
-      description: "${cmd.description}"
-      ---
-    '' + builtins.readFile cmd.file;
-
-  # Prepend OpenCode command frontmatter
-  renderOpenCodeCommand = name: cmd:
-    ''
-      ---
-      description: "${cmd.description}"
-      argument-hint: ""
-      ---
-    '' + builtins.readFile cmd.file;
-
   commands = cfg.commands;
 
   # Render a single MCP server to the .mcp.json format (Claude/Cursor style)
@@ -110,19 +83,6 @@ let
       // lib.optionalAttrs (server.headers != { }) { headers = server.headers; }
       // lib.optionalAttrs (server.oauth != { }) { oauth = server.oauth; }
       // lib.optionalAttrs (server.env != { }) { env = server.env; };
-
-  # Render a single MCP server to OpenCode format
-  # OpenCode uses: root key "mcp", type "local"/"remote", command as array, environment (not env), enabled flag
-  renderOpenCodeMcpServer = name: server:
-    if server.type == "stdio" then
-      { type = "local"; enabled = true; command = [ server.command ] ++ server.args; }
-      // lib.optionalAttrs (server.env != { }) { environment = server.env; }
-    else
-      { type = "remote"; enabled = true; url = server.url; }
-      // lib.optionalAttrs (server.headers != { }) { headers = server.headers; }
-      // lib.optionalAttrs (server.oauth != { }) {
-        oauth = lib.filterAttrs (k: _: builtins.elem k [ "clientId" "clientSecret" "scope" ]) server.oauth;
-      };
 
   # Filter MCP servers for a specific tool
   mcpServersFor = tool:
@@ -141,44 +101,6 @@ let
       ) (builtins.attrNames servers));
     in { mcpServers = renderedServers; };
 
-  # Render OpenCode config with MCP servers and extra settings merged
-  renderOpenCodeConfig = let
-    servers = mcpServersFor "opencode";
-    mcpPart = lib.optionalAttrs (servers != { }) {
-      mcp = lib.listToAttrs (map (attrName:
-        let server = servers.${attrName};
-        in {
-          name = if server.name != null then server.name else attrName;
-          value = renderOpenCodeMcpServer attrName server;
-        }
-      ) (builtins.attrNames servers));
-    };
-  in cfg.opencode.settings // mcpPart;
-
-  codexMcpServers = mcpServersFor "codex";
-  codexConfigToml = cfg.codex.settings // lib.optionalAttrs (codexMcpServers != { }) {
-    mcp_servers = lib.listToAttrs (map (attrName:
-      let server = codexMcpServers.${attrName};
-      in {
-        name = if server.name != null then server.name else attrName;
-        value =
-          if server.type == "stdio" then
-            { command = server.command; args = server.args; }
-            // lib.optionalAttrs (server.env != { }) { env = server.env; }
-          else
-            { url = server.url; }
-            // lib.optionalAttrs (server.oauth != { }) { oauth = server.oauth; };
-      }
-    ) (builtins.attrNames codexMcpServers));
-  };
-  codexConfigTomlFile = (pkgs.formats.toml { }).generate "codex-config.toml" codexConfigToml;
-  localAgentSkillTrees = lib.mapAttrsToList (name: cmd:
-    pkgs.writeTextDir "local-skills/${name}/SKILL.md" (renderOpenCodeSkill name cmd)
-  ) commands;
-  localAgentSkillsDir = pkgs.buildEnv {
-    name = "local-agent-skills";
-    paths = localAgentSkillTrees;
-  };
 in
 {
   options.modules.agents = {
@@ -215,28 +137,6 @@ in
       };
     };
 
-    opencode = {
-      enable = lib.mkEnableOption "OpenCode configuration";
-      settings = lib.mkOption {
-        type = lib.types.attrs;
-        default = { };
-        description = "OpenCode settings (providers, agents, shell, etc).";
-      };
-    };
-
-    codex = {
-      enable = lib.mkEnableOption "Codex CLI configuration";
-      settings = lib.mkOption {
-        type = lib.types.attrs;
-        default = { };
-        description = "Codex CLI settings written to config.toml.";
-      };
-      superpowersPath = lib.mkOption {
-        type = lib.types.nullOr lib.types.path;
-        default = null;
-        description = "Path to superpowers repo for Codex skills.";
-      };
-    };
   };
 
   config = lib.mkIf cfg.enable {
@@ -268,90 +168,12 @@ in
         );
       })
 
-      # OpenCode config + AGENTS.md
-      (lib.mkIf cfg.opencode.enable {
-        ".config/opencode/opencode.json".text = builtins.toJSON renderOpenCodeConfig;
-        ".config/opencode/AGENTS.md".source = config.lib.file.mkOutOfStoreSymlink
-          "${agentsPath}/AGENTS.md";
-      })
-      # Codex AGENTS.md
-      (lib.mkIf cfg.codex.enable {
-        ".codex/AGENTS.md".source = config.lib.file.mkOutOfStoreSymlink
-          "${agentsPath}/AGENTS.md";
-      })
-
-      # Codex superpowers skills
-      (lib.mkIf (cfg.codex.enable && cfg.codex.superpowersPath != null) {
-        ".agents/skills/superpowers".source =
-          "${cfg.codex.superpowersPath}/skills";
-      })
-
       # Commands/skills — Claude Code
       (lib.mapAttrs' (name: cmd:
         lib.nameValuePair ".claude/commands/${name}.md" {
           source = cmd.file;
         }
       ) commands)
-
-      # Commands/skills — Codex (with YAML frontmatter)
-      (lib.mkIf cfg.codex.enable (lib.mapAttrs' (name: cmd:
-        lib.nameValuePair ".codex/prompts/${name}.md" {
-          text = renderCodexPrompt name cmd;
-        }
-      ) commands))
-
-      # Commands/skills — OpenCode (with YAML frontmatter)
-      (lib.mkIf cfg.opencode.enable (lib.mapAttrs' (name: cmd:
-        lib.nameValuePair ".config/opencode/skills/${name}/SKILL.md" {
-          text = renderOpenCodeSkill name cmd;
-        }
-      ) commands))
-
-      # Commands — OpenCode slash commands
-      (lib.mkIf cfg.opencode.enable (lib.mapAttrs' (name: cmd:
-        lib.nameValuePair ".config/opencode/command/${name}.md" {
-          text = renderOpenCodeCommand name cmd;
-        }
-      ) commands))
     ];
-
-    # Codex: patch a managed block in config.toml while preserving runtime state.
-    home.activation.codexConfig = lib.mkIf (cfg.codex.enable && codexConfigToml != { }) (
-      lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-        CODEX_CONFIG="${config.home.homeDirectory}/.codex/config.toml"
-        MARKER_START="# BEGIN NIX MANAGED CODEX CONFIG"
-        MARKER_END="# END NIX MANAGED CODEX CONFIG"
-        if [ -f "$CODEX_CONFIG" ]; then
-          ${pkgs.gawk}/bin/awk '
-            $0 == ENVIRON["MARKER_START"] { managed=1; next }
-            $0 == ENVIRON["MARKER_END"] { managed=0; next }
-            /^\[mcp_servers\./ { legacy_mcp=1; next }
-            legacy_mcp && /^\[/ { legacy_mcp=0 }
-            !managed && !legacy_mcp { print }
-          ' "$CODEX_CONFIG" > "$CODEX_CONFIG.tmp"
-          printf '\n%s\n' "$MARKER_START" >> "$CODEX_CONFIG.tmp"
-          cat ${codexConfigTomlFile} >> "$CODEX_CONFIG.tmp"
-          printf '%s\n' "$MARKER_END" >> "$CODEX_CONFIG.tmp"
-          mv "$CODEX_CONFIG.tmp" "$CODEX_CONFIG"
-        else
-          mkdir -p "$(dirname "$CODEX_CONFIG")"
-          printf '%s\n' "$MARKER_START" > "$CODEX_CONFIG"
-          cat ${codexConfigTomlFile} >> "$CODEX_CONFIG"
-          printf '%s\n' "$MARKER_END" >> "$CODEX_CONFIG"
-        fi
-      ''
-    );
-
-    home.activation.localAgentSkills = lib.hm.dag.entryAfter [ "linkGeneration" ] ''
-      AGENTS_SKILLS_DIR="${config.home.homeDirectory}/.agents/skills"
-      mkdir -p "$AGENTS_SKILLS_DIR"
-      if [ -e "$AGENTS_SKILLS_DIR/local-skills" ]; then
-        chmod -R u+w "$AGENTS_SKILLS_DIR/local-skills"
-      fi
-      rm -rf "$AGENTS_SKILLS_DIR/local-skills"
-      if [ -d ${localAgentSkillsDir}/local-skills ]; then
-        cp -RL ${localAgentSkillsDir}/local-skills "$AGENTS_SKILLS_DIR/"
-      fi
-    '';
   };
 }

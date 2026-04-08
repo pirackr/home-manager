@@ -1,4 +1,4 @@
-{ config, pkgs, nixgl, lib, superpowers, ... }:
+{ config, pkgs, nixgl, lib, ... }:
 
 {
   # User-specific configuration for hhnguyen
@@ -73,24 +73,6 @@
         };
       };
 
-      opencode = {
-        enable = true;
-        settings = {
-          compaction.auto = true;
-          plugin = [
-            "superpowers@git+https://github.com/obra/superpowers.git"
-            "autopilot@git+ssh://git@github.com/pirackr/autopilot.git"
-          ];
-        };
-      };
-
-      mcpServers = {
-        context-mode = {
-          command = "npx";
-          args = [ "-y" "context-mode" ];
-          enableFor = [ "opencode" ];
-        };
-      };
     };
 
     # UI modules (alternatively, can use ui.enable = true to enable all)

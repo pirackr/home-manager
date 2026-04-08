@@ -53,23 +53,5 @@
       };
     };
 
-    opencode = {
-      enable = true;
-      settings = {
-        compaction.auto = true;
-        plugin = [
-          "superpowers@git+https://github.com/obra/superpowers.git"
-          "autopilot@git+ssh://git@github.com/pirackr/autopilot.git"
-        ];
-      };
-    };
-
-    mcpServers = {
-      context-mode = {
-        command = "npx";
-        args = [ "-y" "context-mode" ];
-        enableFor = [ "opencode" ];
-      };
-    };
   };
 }

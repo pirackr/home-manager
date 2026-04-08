@@ -104,8 +104,8 @@ modules = {
   - `vterm.nix`: Virtual terminal support
   - `languages/`: Language-specific configurations (nix, scala, python, go, terraform, yaml)
   - `prelude.el`: Basic Emacs settings loaded from file (straight.el bootstrap)
-- **agents/**: AI agent integration (Claude Code, OpenCode, Codex)
-  - `default.nix`: Unified MCP server config across agents, writes to `~/.mcp.json`, `~/.claude/settings.json`, `~/.config/opencode/opencode.json`, `~/.codex/config.toml`
+- **agents/**: AI agent integration (Claude Code)
+  - `default.nix`: Unified MCP server config for supported agents, writes to `~/.mcp.json` and `~/.claude/settings.json`
   - `AGENTS.md`: Symlinked to `~/.claude/CLAUDE.md` for project-specific AI instructions
 - **scripts/**: Utility scripts
   - `quip2markdown`: Convert Quip documents to markdown
