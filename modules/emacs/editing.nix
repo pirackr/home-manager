@@ -110,6 +110,23 @@
         config = ''
           (setq evil-want-C-i-jump nil)
 
+          ;; Visual enhancements (à la Doom +pretty)
+          (setq org-hide-emphasis-markers t)
+          (setq org-pretty-entities t)
+          (setq org-hide-leading-stars t)
+          (setq org-startup-indented t)
+          (setq org-fontify-done-headline t)
+          (setq org-fontify-quote-and-verse-blocks t)
+          (setq org-fontify-whole-heading-line t)
+          (setq org-tags-column 0)
+          (setq org-highlight-latex-and-related '(native script entities))
+          (setq org-use-sub-superscripts '{})
+
+          (setq org-priority-faces
+            '((?A . error)
+              (?B . warning)
+              (?C . shadow)))
+
           (setq org-todo-keywords '
                 ((sequence "TODO(t)" "PROJ(p)" "WIP(w)" "WAIT(a)" "BLOCK(b)"
                            "|"
@@ -156,11 +173,32 @@
         after = [ "org" ];
       };
 
-      org-bullets = {
+      org-modern = {
         enable = true;
-        package = epkgs: epkgs.org-bullets;
+        package = epkgs: epkgs.org-modern;
         after = [ "org" ];
-        hook = [ "(org-mode . org-bullets-mode)" ];
+        hook = [
+          "(org-mode . org-modern-mode)"
+          "(org-agenda-finalize . org-modern-agenda)"
+        ];
+        config = ''
+          ;; org-startup-indented enables indent-mode, which conflicts with
+          ;; org-modern-hide-stars — disable it to avoid misalignment
+          (setq org-modern-hide-stars nil)
+        '';
+      };
+
+      # Dynamically show/hide emphasis markers based on cursor position
+      org-appear = {
+        enable = true;
+        package = epkgs: epkgs.org-appear;
+        after = [ "org" ];
+        hook = [ "(org-mode . org-appear-mode)" ];
+        config = ''
+          (setq org-appear-autolinks t)
+          (setq org-appear-autosubmarkers t)
+          (setq org-appear-autoentities t)
+        '';
       };
 
       # Code formatting
